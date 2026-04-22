@@ -1,16 +1,28 @@
-from stable_baselines3 import DQN
-from jumpking_env import JumpKingEnv
+from stable_baselines3 import PPO
+from JumpKingEnvContinous import JumpKingEnvContinuous
 
-env = JumpKingEnv()
+# create env
+env = JumpKingEnvContinuous()
 
-#model = DQN.load("dqn_jumpking", env=env)
+# create model
+model = PPO("MlpPolicy", env, verbose=1)
 
-model = DQN(
-    "MlpPolicy",
-    env,
-    verbose=1
-)
+# train
+model.learn(total_timesteps=10000)
 
-model.learn(total_timesteps=1_000)
+# save
+model.save("ppo_jumpking")
 
-model.save("dqn_jumpking")
+# test run
+obs, _ = env.reset()
+
+for step in range(100):
+
+    action, _ = model.predict(obs, deterministic=True)
+
+    obs, reward, done, truncated, _ = env.step(action)
+
+    print(f"Step {step} | Reward: {reward}")
+
+    if done:
+        obs, _ = env.reset()

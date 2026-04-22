@@ -4,7 +4,7 @@ import numpy as np
 from JumpKing import JKGame
 
 
-class JumpKingEnv(gym.Env):
+class JumpKingEnvDQN(gym.Env):
 
     def __init__(self, render_mode=False):
 
@@ -13,59 +13,64 @@ class JumpKingEnv(gym.Env):
 
         self.game = JKGame(max_step=1000)
 
-        self.action_space = spaces.Discrete(63)
+        # 🔥 27 acciones
+        self.action_space = spaces.Discrete(27)
 
         self.observation_space = spaces.Box(
-            low=-10000,
-            high=10000,
-            shape=(4,),
+            low=0,
+            high=2,
+            shape=(40 * 40,),
             dtype=np.float32
         )
 
     def reset(self, seed=None, options=None):
 
         done, state = self.game.reset()
-
         return np.array(state, dtype=np.float32), {}
 
     def step(self, action):
 
         # -------- NO OP --------
         if action == 0:
-            game_action = None
-            state, reward, done = self.game.step(game_action)
+            state, reward, done = self.game.step(None)
 
         # -------- WALK LEFT --------
         elif action == 1:
-            game_action = 1
-            state, reward, done = self.game.step(game_action)
+            state, reward, done = self.game.step(1)
 
         # -------- WALK RIGHT --------
         elif action == 2:
-            game_action = 0
-            state, reward, done = self.game.step(game_action)
+            state, reward, done = self.game.step(0)
 
         # -------- LEFT JUMPS --------
-        elif 3 <= action <= 32:
+        elif 3 <= action <= 14:
 
-            charge = action - 2
+            level = action - 2
+            charge = int((level ** 1.5) * 2)
 
-            # hold SPACE for charge frames
             for _ in range(charge):
-                self.game.step(3)   # LEFT + SPACE
+                self.game.step(3)
 
-            # release jump
-            state, reward, done = self.game.step(1)  # LEFT
+            state, reward, done = self.game.step(1)
+
+            # 🔥 ESPERAR A QUE TERMINE EL SALTO
+            while not self.game.move_available():
+                state, reward, done = self.game.step(None)
 
         # -------- RIGHT JUMPS --------
-        elif 33 <= action <= 62:
+        elif 15 <= action <= 26:
 
-            charge = action - 32
+            level = action - 14
+            charge = int((level ** 1.5) * 2)
 
             for _ in range(charge):
-                self.game.step(2)   # RIGHT + SPACE
+                self.game.step(2)
 
-            state, reward, done = self.game.step(0)  # RIGHT
+            state, reward, done = self.game.step(0)
+
+            # 🔥 ESPERAR A QUE TERMINE EL SALTO
+            while not self.game.move_available():
+                state, reward, done = self.game.step(None)
 
         obs = np.array(state, dtype=np.float32)
 
@@ -75,5 +80,4 @@ class JumpKingEnv(gym.Env):
         return obs, reward, terminated, truncated, {}
 
     def render(self):
-
         pass
