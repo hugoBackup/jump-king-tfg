@@ -59,6 +59,7 @@ class NETWORK(torch.nn.Module):
 		)
 
 		self.final = torch.nn.Linear(hidden_dim, output_dim)
+		self.current_step = 0
 
 	def forward(self, x: torch.Tensor) -> torch.Tensor:
 		"""Returns a Q_value
@@ -239,116 +240,30 @@ class JKGame:
 	
 	def move_available(self):
 
+		# no puede actuar en el aire
 		if self.king.isFalling:
 			return False
 
+		# no puede actuar durante animación de caída
 		if self.king.isSplat and self.king.splatCount <= self.king.splatDuration:
 			return False
 
+		# si el juego terminó
 		if self.king.levels.ending:
-			return False
-
-		# estimar velocidad
-		if not hasattr(self, "prev_y"):
-			self.prev_y = self.king.y
-
-		velocity = self.king.y - self.prev_y
-
-		if abs(velocity) > 1.0:
-			return False
-
-		# usar raycast hacia abajo en vez de plataforma
-		down_ray = self.cast_ray(self.king.x, self.king.y, 270)
-
-		# si no hay suelo cerca → sigue en el aire
-		if down_ray > 0.1:
 			return False
 
 		return True
 	
 
-	def stepDQN(self, action):
-
-		old_level = self.king.levels.current_level
-		old_y = self.king.y
-
-		while True:
-
-			self.clock.tick(0)
-			self._check_events()
-
-			if not os.environ["pause"]:
-				if not self.move_available():
-					action = None
-				self._update_gamestuff(action=action)
-
-			self._update_gamescreen()
-			self._update_guistuff()
-			self._update_audio()
-			pygame.display.update()
-
-			if self.move_available():
-
-				self.step_counter += 1
-
-				final_level = self.king.levels.current_level
-				final_y = self.king.y
-
-				############################################################
-				# REWARD
-				############################################################
-
-				reward = 0
-
-				old_height = self.get_global_height(old_level, old_y)
-				new_height = self.get_global_height(final_level, final_y)
-
-				delta_h = new_height - old_height
-
-				reward += max(0, delta_h * 5.0)
-
-				#  subir nivel
-				if final_level > old_level and not self.king.isFalling:
-
-					# PRIMERA VEZ (progreso real)
-					if final_level > self.best_level_reached:
-						reward += 1000
-						self.best_level_reached = final_level
-
-					# REPETIDO (ya alcanzado antes)
-					else:
-						reward += 20
-
-				#  caer de nivel
-				if final_level < old_level:
-					reward -= 50
-
-				############################################################
-				#  penalización por repetir estado
-				############################################################
-
-				pos = (final_level, int(final_y // 10))
-				self.last_positions[pos] = self.last_positions.get(pos, 0) + 1
-
-				reward -= min(self.last_positions[pos] * 0.1, 2)
-
-				############################################################
-
-				done = self.step_counter > self.max_step
-
-				grid = self.get_layout_grid()
-				state = grid.flatten()
-
-				return state, reward, done
-			
+	
 	def step(self, action):
 
-		self.clock.tick(0)
+		self.clock.tick(self.fps)
 		self._check_events()
 
 		if not os.environ["pause"]:
-			if not self.move_available():
-				action = None
+			#if not self.move_available():
+				#	action = None
 			self._update_gamestuff(action=action)
 
 		self._update_gamescreen()

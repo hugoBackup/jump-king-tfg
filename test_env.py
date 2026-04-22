@@ -17,7 +17,7 @@ model.learn(total_timesteps=100_000)
 model.save("ppo_jumpking")
 
 
-# TEST
+
 obs, _ = env.reset()
 
 for step in range(300):
@@ -28,7 +28,7 @@ for step in range(300):
 
     print(f"Step {step} | Reward: {reward:.2f}")
 
-    # 🔥 reset solo si realmente cortas episodio
+    #  reset solo si realmente cortas episodio
     if truncated:
         print("Reset por límite de pasos")
         obs, _ = env.reset()
