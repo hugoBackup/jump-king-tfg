@@ -1,28 +1,34 @@
 from stable_baselines3 import PPO
 from JumpKingEnvContinous import JumpKingEnvContinuous
 
-# create env
 env = JumpKingEnvContinuous()
 
-# create model
-model = PPO("MlpPolicy", env, verbose=1)
+model = PPO(
+    "MlpPolicy",
+    env,
+    verbose=1,
+    learning_rate=3e-4,
+    n_steps=2048,
+    batch_size=64
+)
 
-# train
-model.learn(total_timesteps=10000)
+model.learn(total_timesteps=100_000)
 
-# save
 model.save("ppo_jumpking")
 
-# test run
+
+# TEST
 obs, _ = env.reset()
 
-for step in range(100):
+for step in range(300):
 
     action, _ = model.predict(obs, deterministic=True)
 
-    obs, reward, done, truncated, _ = env.step(action)
+    obs, reward, terminated, truncated, _ = env.step(action)
 
-    print(f"Step {step} | Reward: {reward}")
+    print(f"Step {step} | Reward: {reward:.2f}")
 
-    if done:
+    # 🔥 reset solo si realmente cortas episodio
+    if truncated:
+        print("Reset por límite de pasos")
         obs, _ = env.reset()

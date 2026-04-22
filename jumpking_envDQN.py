@@ -13,7 +13,7 @@ class JumpKingEnvDQN(gym.Env):
 
         self.game = JKGame(max_step=1000)
 
-        # 🔥 27 acciones
+        #  27 acciones
         self.action_space = spaces.Discrete(27)
 
         self.observation_space = spaces.Box(
@@ -53,7 +53,7 @@ class JumpKingEnvDQN(gym.Env):
 
             state, reward, done = self.game.step(1)
 
-            # 🔥 ESPERAR A QUE TERMINE EL SALTO
+            #  ESPERAR A QUE TERMINE EL SALTO
             while not self.game.move_available():
                 state, reward, done = self.game.step(None)
 
@@ -68,7 +68,7 @@ class JumpKingEnvDQN(gym.Env):
 
             state, reward, done = self.game.step(0)
 
-            # 🔥 ESPERAR A QUE TERMINE EL SALTO
+            #  ESPERAR A QUE TERMINE EL SALTO
             while not self.game.move_available():
                 state, reward, done = self.game.step(None)
 

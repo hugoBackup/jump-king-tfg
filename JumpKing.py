@@ -207,15 +207,12 @@ class JKGame:
 
 	def reset(self):
 
-		# reset estructuras auxiliares
 		self.last_positions = {}
 		self.visited = {}
 
-		# reset juego
 		self.king.reset()
 		self.levels.reset()
 
-		# entorno
 		os.environ["start"] = "1"
 		os.environ["gaming"] = "1"
 		os.environ["pause"] = ""
@@ -225,63 +222,49 @@ class JKGame:
 
 		self.step_counter = 0
 
-		#  altura global inicial
 		current_level = self.king.levels.current_level
 		current_y = self.king.y
 
 		self.last_height = self.get_global_height(current_level, current_y)
 		self.best_height = self.last_height
 
-		# opcional: tracking de posiciones
+		self.prev_y = current_y
+
 		self.visited[(current_level, int(current_y))] = 1
 
-		done = False
+		state = np.array(self.get_state(), dtype=np.float32)
 
-		#  estadp sin grid
-		state = self.get_state()
-
-		return done, state
+		return state   # ← SOLO ESTO
+		
 	
-	def get_platform_distances(self):
-
-		current_level = self.levels.levels[self.king.levels.current_level]
-		platforms = current_level.platforms
-
-		player_x = self.king.x
-		player_y = self.king.y
-
-		dist_down = 10000
-		dist_left = 10000
-		dist_right = 10000
-
-		for p in platforms:
-			rect = p.rect
-
-			# -------- SUELO --------
-			if rect.x <= player_x <= rect.x + rect.width:
-				if rect.y >= player_y:
-					dist = rect.y - player_y
-					dist_down = min(dist_down, dist)
-
-			# -------- IZQUIERDA --------
-			if rect.y <= player_y <= rect.y + rect.height:
-				if rect.x <= player_x:
-					dist = player_x - rect.x
-					dist_left = min(dist_left, dist)
-
-			# -------- DERECHA --------
-			if rect.y <= player_y <= rect.y + rect.height:
-				if rect.x >= player_x:
-					dist = rect.x - player_x
-					dist_right = min(dist_right, dist)
-
-		return dist_down, dist_left, dist_right
-
 	def move_available(self):
-		available = not self.king.isFalling \
-					and not self.king.levels.ending \
-					and (not self.king.isSplat or self.king.splatCount > self.king.splatDuration)
-		return available
+
+		if self.king.isFalling:
+			return False
+
+		if self.king.isSplat and self.king.splatCount <= self.king.splatDuration:
+			return False
+
+		if self.king.levels.ending:
+			return False
+
+		# estimar velocidad
+		if not hasattr(self, "prev_y"):
+			self.prev_y = self.king.y
+
+		velocity = self.king.y - self.prev_y
+
+		if abs(velocity) > 1.0:
+			return False
+
+		# usar raycast hacia abajo en vez de plataforma
+		down_ray = self.cast_ray(self.king.x, self.king.y, 270)
+
+		# si no hay suelo cerca → sigue en el aire
+		if down_ray > 0.1:
+			return False
+
+		return True
 	
 
 	def stepDQN(self, action):
@@ -540,4 +523,85 @@ class JKGame:
 
 	def is_jump_finished(self):
 		return self.move_available()		
+	
+	def cast_ray(self, x, y, angle_deg, max_distance=200, step=3):
 
+		angle = np.radians(angle_deg)
+
+		dx = np.cos(angle)
+		dy = -np.sin(angle)
+
+		current_level = self.king.levels.current_level
+		level_height = 360
+
+		for dist in range(5, max_distance, step):
+
+			px = x + dx * dist
+			py = y + dy * dist
+
+			# fuera de pantalla
+			if px < 0 or px >= 480 or py < 0 or py >= 360:
+				return dist / max_distance
+
+			# niveles a comprobar
+			levels_to_check = [current_level]
+
+			if dy < 0:
+				levels_to_check.append(current_level + 1)
+
+			if dy > 0:
+				levels_to_check.append(current_level - 1)
+
+			for lvl in levels_to_check:
+				if 0 <= lvl < len(self.levels.levels):
+
+					# ajustar coordenadas al nivel correcto
+					local_py = py - (lvl - current_level) * level_height
+
+					for p in self.levels.levels[lvl].platforms:
+						if p.rect.collidepoint(px, local_py):
+							return dist / max_distance
+
+		return 1.0
+	
+	def get_state(self):
+
+		x = self.king.x
+		y = self.king.y
+
+		angles = [
+			250, 270, 290,     # suelo
+			0, 180,            # laterales
+			315, 225,          # diagonales
+			30, 60, 90, 120, 150  # arriba
+		]
+
+		state = []
+
+		# raycasting
+		for angle in angles:
+			dist = self.cast_ray(x, y, angle)
+			state.append(dist)
+
+		# altura global
+		level = self.king.levels.current_level
+		height = self.get_global_height(level, y)
+		state.append(np.tanh(height / 2000.0))
+
+		# puede saltar
+		state.append(1.0 if self.move_available() else 0.0)
+
+		# cayendo
+		state.append(1.0 if self.king.isFalling else 0.0)
+
+		# velocidad (segura)
+		if not hasattr(self, "prev_y"):
+			self.prev_y = y
+
+		velocity = y - self.prev_y
+		state.append(velocity / 20.0)
+
+		# actualizar memoria
+		self.prev_y = y
+
+		return np.array(state, dtype=np.float32)
