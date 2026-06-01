@@ -126,10 +126,7 @@ class JumpKingEnvContinuous(gym.Env):
             #print(f"❌ Acción {self.numero_acciones} | Jump {self.jump_counter} | Reward: {reward:.2f}")
 
         if self.jump_counter % 1 == 0:
-            print(
-                f"Resumen -> Acciones: {self.numero_acciones} | ✔️ {self.successful_jumps} | ❌ {self.failed_jumps} | "
-                f"~ {self.neutral_jumps} | Total Reward: {self.total_reward:.2f}"
-            )
+           # print(f"Resumen -> Acciones: {self.numero_acciones} |  {self.successful_jumps} |  {self.failed_jumps} | "f"~ {self.neutral_jumps} | Total Reward: {self.total_reward:.2f}")
 
             self.successful_jumps = 0
             self.failed_jumps = 0

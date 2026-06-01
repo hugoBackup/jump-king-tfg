@@ -181,9 +181,36 @@ class JKGame:
  
 		self.bg_color = (0, 0, 0)
 
-		self.screen = pygame.display.set_mode((int(os.environ.get("screen_width")) * int(os.environ.get("window_scale")), int(os.environ.get("screen_height")) * int(os.environ.get("window_scale"))), pygame.HWSURFACE|pygame.DOUBLEBUF)#|pygame.SRCALPHA)
+		#self.screen = pygame.display.set_mode((int(os.environ.get("screen_width")) * int(os.environ.get("window_scale")), int(os.environ.get("screen_height")) * int(os.environ.get("window_scale"))), pygame.HWSURFACE|pygame.DOUBLEBUF)#|pygame.SRCALPHA)
 
-		self.game_screen = pygame.Surface((int(os.environ.get("screen_width")), int(os.environ.get("screen_height"))), pygame.HWSURFACE|pygame.DOUBLEBUF)#|pygame.SRCALPHA)
+		#self.game_screen = pygame.Surface((int(os.environ.get("screen_width")), int(os.environ.get("screen_height"))), pygame.HWSURFACE|pygame.DOUBLEBUF)#|pygame.SRCALPHA)
+
+
+		preview_height = 80
+
+		screen_width = int(os.environ.get("screen_width"))
+		screen_height = int(os.environ.get("screen_height"))
+		window_scale = int(os.environ.get("window_scale"))
+
+		# ventana física más alta
+		self.screen = pygame.display.set_mode(
+			(
+				screen_width * window_scale,
+				(screen_height + preview_height) * window_scale
+			),
+			pygame.HWSURFACE | pygame.DOUBLEBUF
+		)
+
+		# superficie interna del juego NO cambia
+		self.game_screen = pygame.Surface(
+			(
+				screen_width,
+				screen_height
+			),
+			pygame.HWSURFACE | pygame.DOUBLEBUF
+		)
+
+		self.preview_height = preview_height
 
 		self.game_screen_x = 0
 
@@ -203,8 +230,10 @@ class JKGame:
 		self.max_step = max_step
 
 		self.visited = {}
+		self.debug_rays = []
 
-		pygame.display.set_caption('Jump King At Home XD')
+
+		pygame.display.set_caption('Pot la IA esdevenir el Jump King ? ')
 
 	def reset(self):
 
@@ -258,20 +287,29 @@ class JKGame:
 	
 	def step(self, action):
 
+		juegoYO = True
+
 		self.clock.tick(self.fps)
 		self._check_events()
 
-		if not os.environ["pause"]:
-			#if not self.move_available():
-				#	action = None
-			self._update_gamestuff(action=action)
+		
+		if juegoYO:
+
+			if not os.environ["pause"]:
+				self._update_gamestuff()
+
+		
+		else:
+
+			if not os.environ["pause"]:
+				self._update_gamestuff(action=action)
 
 		self._update_gamescreen()
 		self._update_guistuff()
 		self._update_audio()
+
 		pygame.display.update()
 
-		# estado basado en sensores (raycasting)
 		state = self.get_state()
 
 		return state
@@ -346,6 +384,10 @@ class JKGame:
 
 		self.game_screen.fill(self.bg_color)
 
+		self.debug_rays = []
+
+		
+
 		if os.environ["gaming"]:
 
 			self.levels.blit1()
@@ -370,9 +412,158 @@ class JKGame:
 
 			self.start.blitme()
 
+			
+		self.get_state()
+		self.draw_debug_rays()
 		self.menus.blitme()
 
-		self.screen.blit(pygame.transform.scale(self.game_screen, self.screen.get_size()), (self.game_screen_x, 0))
+		# ==========================================
+		# PREVIEW NIVEL SUPERIOR
+		# ==========================================
+
+		self.screen.fill((0, 0, 0))
+
+		next_level_id = self.levels.current_level + 1
+
+		if next_level_id in self.levels.levels:
+
+			scale = int(os.environ.get("window_scale"))
+
+			preview_height_px = 80 * scale
+
+			next_level = self.levels.levels[next_level_id]
+
+			VISIBLE_START = 280
+
+			for p in next_level.platforms:
+
+				rect = p.rect
+
+				# ignorar todo lo que no esté en los
+				# últimos 80 px del nivel siguiente
+				if rect.bottom < VISIBLE_START:
+					continue
+
+				preview_rect = pygame.Rect(
+
+					int(rect.x * scale),
+
+					int((rect.y - VISIBLE_START) * scale),
+
+					int(rect.width * scale),
+
+					int(rect.height * scale)
+
+				)
+
+				pygame.draw.rect(
+					self.screen,
+					(0, 255, 255),
+					preview_rect
+				)
+
+
+			# ==========================================
+			# CONTINUACIÓN REAL DE LOS RAYOS
+			# ==========================================
+
+			for points, collision_type in self.debug_rays:
+
+				preview_points = []
+
+				for px, py in points:
+
+					if -80 <= py <= 0:
+
+						preview_y = int((py + 80) * scale)
+
+						preview_points.append(
+							(
+								int(px * scale),
+								preview_y
+							)
+						)
+
+				if len(preview_points) >= 2:
+
+					pygame.draw.lines(
+						self.screen,
+						(0, 255, 0),
+						False,
+						preview_points,
+						2
+					)
+
+					# ==========================
+					# CRUZ FINAL
+					# SOLO SI LA COLISIÓN REAL
+					# OCURRE DENTRO DE LA PREVIEW
+					# ==========================
+
+					real_end_x, real_end_y = points[-1]
+
+					if -80 <= real_end_y <= 0:
+
+						end_x = int(real_end_x * scale)
+						end_y = int((real_end_y + 80) * scale)
+
+						size = 5
+
+						if collision_type == "wall":
+							color = (0, 100, 255)
+
+						elif collision_type == "floor":
+							color = (150, 150, 150)
+
+						elif collision_type == "ceiling":
+							color = (255, 0, 0)
+
+						else:
+							color = (255, 255, 255)
+
+						pygame.draw.line(
+							self.screen,
+							color,
+							(end_x - size, end_y - size),
+							(end_x + size, end_y + size),
+							2
+						)
+
+						pygame.draw.line(
+							self.screen,
+							color,
+							(end_x - size, end_y + size),
+							(end_x + size, end_y - size),
+							2
+						)
+
+					# ==========================
+					# PUNTO ORIGEN
+					# ==========================
+
+					start_x, start_y = preview_points[0]
+
+					pygame.draw.circle(
+						self.screen,
+						(0, 150, 255),
+						(start_x, start_y),
+						3
+					)
+		scale = int(os.environ.get("window_scale"))
+
+		self.screen.blit(
+			pygame.transform.scale(
+				self.game_screen,
+				(
+					int(os.environ.get("screen_width")) * scale,
+					int(os.environ.get("screen_height")) * scale
+				)
+			),
+			(
+					self.game_screen_x,
+					self.preview_height * scale
+			)
+		)
 
 	def _resize_screen(self, w, h):
 
@@ -439,84 +630,315 @@ class JKGame:
 	def is_jump_finished(self):
 		return self.move_available()		
 	
-	def cast_ray(self, x, y, angle_deg, max_distance=200, step=3):
+	
 
-		angle = np.radians(angle_deg)
-
-		dx = np.cos(angle)
-		dy = -np.sin(angle)
+	def cast_trajectory(
+		self,
+		x,
+		y,
+		vx,
+		vy,
+		max_steps=120,
+		gravity=0.875
+	):
 
 		current_level = self.king.levels.current_level
 		level_height = 360
 
-		for dist in range(5, max_distance, step):
+		points = []
 
-			px = x + dx * dist
-			py = y + dy * dist
+		bounce_count = 0
+		max_bounces = 2
 
-			# fuera de pantalla
-			if px < 0 or px >= 480 or py < 0 or py >= 360:
-				return dist / max_distance
+		for _ in range(max_steps):
 
-			# niveles a comprobar
-			levels_to_check = [current_level]
+			prev_x = x
+			prev_y = y
 
-			if dy < 0:
-				levels_to_check.append(current_level + 1)
+			# avanzar física
+			x += vx
+			y += vy
 
-			if dy > 0:
-				levels_to_check.append(current_level - 1)
+			# gravedad
+			vy += gravity
+
+			points.append((x, y))
+
+			# fuera del mapa
+			if x < 0 or x >= 480 or y < -360 or y > 720:
+
+				self.debug_rays.append((points, "none"))
+				return 1.0
+
+			levels_to_check = [
+				current_level,
+				current_level + 1
+			]
+
+			collision_handled = False
 
 			for lvl in levels_to_check:
-				if 0 <= lvl < len(self.levels.levels):
 
-					# ajustar coordenadas al nivel correcto
-					local_py = py - (lvl - current_level) * level_height
+				if collision_handled:
+					break
 
-					for p in self.levels.levels[lvl].platforms:
-						if p.rect.collidepoint(px, local_py):
-							return dist / max_distance
+				if not (0 <= lvl < len(self.levels.levels)):
+					continue
+
+				local_py = y + (
+					(lvl - current_level) * level_height
+				)
+
+				prev_local_py = prev_y + (
+					(lvl - current_level) * level_height
+				)
+
+				for p in self.levels.levels[lvl].platforms:
+
+					rect = p.rect
+
+					hit = rect.clipline(
+						(prev_x, prev_local_py),
+						(x, local_py)
+					)
+
+					
+
+					if not hit:
+						continue
+
+					hit = rect.clipline(
+						(prev_x, prev_local_py),
+						(x, local_py)
+					)
+
+				
+
+					
+
+					dx_left = abs(x - rect.left)
+					dx_right = abs(x - rect.right)
+
+					dy_top = abs(local_py - rect.top)
+					dy_bottom = abs(local_py - rect.bottom)
+
+					min_dist = min(
+						dx_left,
+						dx_right,
+						dy_top,
+						dy_bottom
+					)
+
+					# ======================================
+					# SUELO
+					# ======================================
+
+					if min_dist == dy_top:
+
+						self.debug_rays.append(
+							(points, "floor")
+						)
+
+						dist = np.sqrt(
+							(points[-1][0] - points[0][0])**2 +
+							(points[-1][1] - points[0][1])**2
+						)
+
+						return min(dist / 300.0, 1.0)
+
+					# ======================================
+					# TECHO
+					# ======================================
+
+					elif min_dist == dy_bottom:
+
+						self.debug_rays.append(
+							(points, "ceiling")
+						)
+
+						dist = np.sqrt(
+							(points[-1][0] - points[0][0])**2 +
+							(points[-1][1] - points[0][1])**2
+						)
+
+						return min(dist / 300.0, 1.0)
+
+					# ======================================
+					# PARED
+					# ======================================
+
+					else:
+
+						if bounce_count == 0:
+
+							self.debug_rays.append(
+								(points.copy(), "wall")
+							)
+
+							vx = -vx * 0.55
+
+							if dx_left < dx_right:
+								x = rect.left - 2
+							else:
+								x = rect.right + 2
+
+							bounce_count += 1
+
+							points.append((x, y))
+
+							collision_handled = True
+
+							break
+
+						else:
+
+							self.debug_rays.append(
+								(points, "wall")
+							)
+
+							dist = np.sqrt(
+								(points[-1][0] - points[0][0])**2 +
+								(points[-1][1] - points[0][1])**2
+							)
+
+							return min(dist / 300.0, 1.0)
+
+		self.debug_rays.append((points, "none"))
 
 		return 1.0
 	
+	
+	
+	
 	def get_state(self):
 
-		x = self.king.x
-		y = self.king.y
-
-		angles = [
-			250, 270, 290,     # suelo
-			0, 180,            # laterales
-			315, 225,          # diagonales
-			30, 60, 90, 120, 150  # arriba
-		]
+		x = self.king.rect.centerx
+		y = self.king.rect.bottom - 2
 
 		state = []
 
-		# raycasting
-		for angle in angles:
-			dist = self.cast_ray(x, y, angle)
+		# trayectorias predictivas
+		# (vx, vy)
+		trajectories = [
+
+			 #saltos pequeños
+			#(-3, -8),
+			#(3, -8)
+			
+			#,
+
+			# saltos medios
+			#(-5, -12),
+			#(5, -12),
+
+			# saltos largos
+			(-7, -16),
+			(7, -16)
+		]
+
+		for vx, vy in trajectories:
+
+			dist = self.cast_trajectory(
+				x,
+				y,
+				vx,
+				vy
+			)
+
 			state.append(dist)
 
-		# altura global
+		# altura global normalizada
 		level = self.king.levels.current_level
 		height = self.get_global_height(level, y)
+
 		state.append(np.tanh(height / 2000.0))
 
-		# puede saltar
-		state.append(1.0 if self.move_available() else 0.0)
+		# puede actuar
+		state.append(
+			1.0 if self.move_available() else 0.0
+		)
 
 		# cayendo
-		state.append(1.0 if self.king.isFalling else 0.0)
+		state.append(
+			1.0 if self.king.isFalling else 0.0
+		)
 
-		# velocidad (segura)
+		# velocidad vertical aproximada
 		if not hasattr(self, "prev_y"):
 			self.prev_y = y
 
 		velocity = y - self.prev_y
-		state.append(velocity / 20.0)
 
-		# actualizar memoria
+		state.append(
+			np.tanh(velocity / 20.0)
+		)
+
 		self.prev_y = y
 
 		return np.array(state, dtype=np.float32)
+	
+	
+	def draw_debug_rays(self):
+
+		for points, collision_type in self.debug_rays:
+
+			if len(points) < 2:
+				continue
+
+			int_points = [
+				(int(px), int(py))
+				for px, py in points
+			]
+
+			# trayectoria verde
+			pygame.draw.lines(
+				self.game_screen,
+				(0, 255, 0),
+				False,
+				int_points,
+				2
+			)
+
+			end_x, end_y = int_points[-1]
+
+			size = 5
+
+			# color según impacto
+			if collision_type == "wall":
+				color = (0, 100, 255)      # azul
+
+			elif collision_type == "floor":
+				color = (150, 150, 150)   # gris
+
+			elif collision_type == "ceiling":
+				color = (255, 0, 0)       # rojo
+
+			else:
+				color = (255, 255, 255)
+
+			# dibujar X
+			pygame.draw.line(
+				self.game_screen,
+				color,
+				(end_x - size, end_y - size),
+				(end_x + size, end_y + size),
+				2
+			)
+
+			pygame.draw.line(
+				self.game_screen,
+				color,
+				(end_x - size, end_y + size),
+				(end_x + size, end_y - size),
+				2
+			)
+
+			# punto origen
+			start_x, start_y = int_points[0]
+
+			pygame.draw.circle(
+				self.game_screen,
+				(0, 150, 255),
+				(start_x, start_y),
+				3
+			)

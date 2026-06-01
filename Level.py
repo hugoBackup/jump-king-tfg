@@ -135,6 +135,8 @@ class Levels:
 
 			current_level = self.levels[self.current_level]
 
+			next_level_id = self.current_level + 1
+
 			if current_level.background:
 				current_level.background.blitme(self.screen)
 
@@ -145,9 +147,11 @@ class Levels:
 			if current_level.midground:
 				current_level.midground.blitme(self.screen)
 
+			
+
 			if current_level.props:
 				for prop in current_level.props:
-						prop.blitme(self.screen)
+					prop.blitme(self.screen)
 
 			if current_level.flyer:
 				current_level.flyer.blitme(self.screen)
@@ -156,11 +160,16 @@ class Levels:
 				current_level.npc.blitme(self.screen)
 
 			if current_level.weather:
-				current_level.weather.blitme(self.screen, self.wind.rect)
+				current_level.weather.blitme(
+					self.screen,
+					self.wind.rect
+				)
 
 		except Exception as e:
+
+			print("BLIT1 ERROR:", e)
+
 			
-			print("BLIT1 ERROR: ", e)
 
 	def blit2(self):
 
