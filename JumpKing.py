@@ -3,9 +3,14 @@
 # Game Screen
 # 
 import os
+import math
 from turtle import done
+from unittest import result
+
+from JumpPredictionResult import JumpPredictionResult
 
 from matplotlib.pyplot import grid
+from sympy import false, true
 #os.environ["SDL_VIDEODRIVER"] = "dummy" esto para quitar el video 
 
 
@@ -231,6 +236,7 @@ class JKGame:
 
 		self.visited = {}
 		self.debug_rays = []
+		self.debug_ground_rays = []
 
 
 		pygame.display.set_caption('Pot la IA esdevenir el Jump King ? ')
@@ -287,28 +293,35 @@ class JKGame:
 	
 	def step(self, action):
 
-		juegoYO = True
+		# NO limitar FPS durante entrenamiento
+		# self.clock.tick(self.fps)
 
-		self.clock.tick(self.fps)
 		self._check_events()
 
-		
+		juegoYO = false
+
 		if juegoYO:
 
 			if not os.environ["pause"]:
 				self._update_gamestuff()
 
-		
 		else:
 
 			if not os.environ["pause"]:
 				self._update_gamestuff(action=action)
 
-		self._update_gamescreen()
-		self._update_guistuff()
-		self._update_audio()
+		# =====================================
+		# DIBUJAR SI JUEGA EL HUMANO
+		# O SI EL RENDER ESTÁ ACTIVADO
+		# =====================================
 
-		pygame.display.update()
+		if juegoYO or os.environ.get("render", "0") == "1":
+
+			self._update_gamescreen()
+			self._update_guistuff()
+			self._update_audio()
+
+			pygame.display.update()
 
 		state = self.get_state()
 
@@ -323,7 +336,7 @@ class JKGame:
 		while True:
 			#state = [self.king.levels.current_level, self.king.x, self.king.y, self.king.jumpCount]
 			#print(state)
-			#self.clock.tick(self.fps)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			#self.clock.tick(self.fps)#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			self.clock.tick(0)
 			self._check_events()
 			if not os.environ["pause"]:
@@ -385,6 +398,8 @@ class JKGame:
 		self.game_screen.fill(self.bg_color)
 
 		self.debug_rays = []
+
+		self.debug_ground_rays = []
 
 		
 
@@ -650,227 +665,479 @@ class JKGame:
 	
 	
 
-	def cast_trajectory(
+	
+	
+
+	def get_ray_rect(self, x, local_py):
+
+		return pygame.Rect(
+			int(x - 1),
+			int(local_py - self.king.rect.height // 1.2 ),
+			2,
+			self.king.rect.height * 1.2
+		)
+	
+
+	def classify_collision(
+		self,
+		ghost_rect,
+		rect,
+		prev_local_py
+	):
+
+		if (
+			ghost_rect.bottom >= rect.top
+			and prev_local_py < rect.top
+		):
+
+			return {
+				"kind": "floor",
+				"surface_y": rect.top
+			}
+
+		elif (
+			ghost_rect.top <= rect.bottom
+			and prev_local_py > rect.bottom
+		):
+
+			return {
+				"kind": "ceiling",
+				"surface_y": rect.bottom
+			}
+
+		return {
+			"kind": "wall",
+			"surface_y": None
+		}
+	
+	def handle_wall_bounce(
+		self,
+		x,
+		y,
+		vx,
+		rect
+	):
+
+		vx = -vx * 0.55
+
+		if abs(x - rect.left) < abs(x - rect.right):
+
+			x = rect.left - 2
+
+			side = "left"
+
+		else:
+
+			x = rect.right + 2
+
+			side = "right"
+
+		return {
+			"x": x,
+			"y": y,
+			"vx": vx,
+			"side": side
+		}
+	
+
+	def find_collision(
+		self,
+		x,
+		y,
+		prev_y,
+		current_level,
+		level_height
+	):
+
+		levels_to_check = [
+			current_level,
+			current_level + 1
+		]
+
+		for lvl in levels_to_check:
+
+			if not (0 <= lvl < len(self.levels.levels)):
+				continue
+
+			local_py = y + (
+				(lvl - current_level)
+				* level_height
+			)
+
+			prev_local_py = prev_y + (
+				(lvl - current_level)
+				* level_height
+			)
+
+			for p in self.levels.levels[lvl].platforms:
+
+				rect = p.rect
+
+				ghost_rect = self.get_ray_rect(
+					x,
+					local_py
+				)
+
+				if not ghost_rect.colliderect(rect):
+					continue
+
+				collision_info = self.classify_collision(
+					ghost_rect,
+					rect,
+					prev_local_py
+				)
+
+				return {
+					"collision_kind": collision_info["kind"],
+					"surface_y": collision_info["surface_y"],
+					"rect": rect,
+					"local_py": local_py,
+					"level": lvl,
+					"hit_x": x,
+					"hit_y": local_py
+				}
+
+		return None
+		
+
+	def evaluate_jump(
 		self,
 		x,
 		y,
 		vx,
 		vy,
 		max_steps=120,
-		gravity=0.875
+		gravity=0.27
 	):
 
 		current_level = self.king.levels.current_level
 		level_height = 360
 
 		points = []
+		result = JumpPredictionResult()
 
-		bounce_count = 0
-		max_bounces = 2
+		origin_y = y
+		has_bounced = False
 
 		for _ in range(max_steps):
 
-			prev_x = x
 			prev_y = y
 
-			# avanzar física
 			x += vx
 			y += vy
 
-			# gravedad
 			vy += gravity
 
 			points.append((x, y))
+			result.points = points
 
-			# fuera del mapa
-			if x < 0 or x >= 480 or y < -360 or y > 720:
+			if (
+				x < 0
+				or x >= 480
+				or y < -360
+				or y > 720
+			):
 
-				self.debug_rays.append((points, "none"))
-				return 1.0
+				self.debug_rays.append(
+					(points, "none")
+				)
 
-			levels_to_check = [
+				return  result
+
+			collision = self.find_collision(
+				x,
+				y,
+				prev_y,
 				current_level,
-				current_level + 1
-			]
+				level_height
+			)
 
-			collision_handled = False
+			if collision is None:
+				continue
 
-			for lvl in levels_to_check:
+			collision_kind = collision["collision_kind"]
+			rect = collision["rect"]
+			local_py = collision["local_py"]
 
-				if collision_handled:
-					break
-
-				if not (0 <= lvl < len(self.levels.levels)):
-					continue
-
-				local_py = y + (
-					(lvl - current_level) * level_height
-				)
-
-				prev_local_py = prev_y + (
-					(lvl - current_level) * level_height
-				)
-
-				for p in self.levels.levels[lvl].platforms:
-
-					rect = p.rect
-					# cambiamos la hitbox del rayo para que tenga en cuenta el tamaño del jugador asi mostramos tambien colisiones  relevantes
-					ghost_rect = pygame.Rect(
-						int(x - 1),
-						int(local_py - self.king.rect.height//2),
-						2,
-						self.king.rect.height
-					)
-
-					hit = ghost_rect.colliderect(rect)
-
-					
-
-					if not hit:
-						continue
-
-					hit = rect.clipline(
-						(prev_x, prev_local_py),
-						(x, local_py)
-					)
-
+			if collision_kind == "floor":
 				
 
-					
+				result.collision_type = "floor"
 
-					dx_left = abs(x - rect.left)
-					dx_right = abs(x - rect.right)
+				surface_y = collision["surface_y"]
 
-					dy_top = abs(local_py - rect.top)
-					dy_bottom = abs(local_py - rect.bottom)
+				relative_height = (
+					origin_y - surface_y
+				) / 360.0
 
-					min_dist = min(
-						dx_left,
-						dx_right,
-						dy_top,
-						dy_bottom
+				if relative_height > 0:
+
+					result.valid_floor = True
+
+					result.relative_height = min(
+						relative_height,
+						1.0
 					)
 
-					# ======================================
-					# SUELO
-					# ======================================
+				self.debug_rays.append(
+					(
+						points,
+						"floor"
+					)
+				)
+				result.collision_type = "floor"
 
-					if min_dist == dy_top:
+				return result
 
-						self.debug_rays.append(
-							(points, "floor")
-						)
+			elif collision_kind == "ceiling":
+				result.collision_type = "ceiling"
+				result.hit_ceiling = True
 
-						dist = np.sqrt(
-							(points[-1][0] - points[0][0])**2 +
-							(points[-1][1] - points[0][1])**2
-						)
+				vy = 0.0
+				vx *= 0.5
+				y += 2
 
-						return min(dist / 300.0, 1.0)
+				continue
 
-					# ======================================
-					# TECHO
-					# ======================================
+			elif collision_kind == "wall":
 
-					elif min_dist == dy_bottom:
+				if not has_bounced:
+					result.wall_bounces += 1
 
-						vy = 0.0
+					self.debug_rays.append(
+						(points.copy(), "wall")
+					)
 
-						vx *= 0.5
+					bounce = self.handle_wall_bounce(
+						x,
+						y,
+						vx,
+						rect
+					)
 
-						y += 2
+					x = bounce["x"]
+					y = bounce["y"]
+					vx = bounce["vx"]
 
-						collision_handled = True
+					has_bounced = True
 
-						break
+					points.append((x, y))
+					result.points = points
 
-					# ======================================
-					# PARED
-					# ======================================
+					continue
 
-					else:
+				else:
 
-						if bounce_count == 0:
+					result.collision_type = "wall"
 
-							self.debug_rays.append(
-								(points.copy(), "wall")
-							)
+					self.debug_rays.append(
+						(points, "wall")
+					)
 
-							vx = -vx * 0.55
+					return result
 
-							if dx_left < dx_right:
-								x = rect.left - 2
-							else:
-								x = rect.right + 2
+		self.debug_rays.append(
+			(points, "none")
+		)
 
-							bounce_count += 1
+		return result
 
-							points.append((x, y))
+	def cast_ground_ray(
+		self,
+		x,
+		y,
+		sensor_name,
+		max_distance=150
+	):
 
-							collision_handled = True
+		current_level = self.king.levels.current_level
 
-							break
+		points = []
 
-						else:
+		for d in range(max_distance):
 
-							self.debug_rays.append(
-								(points, "wall")
-							)
+			test_y = y + d
 
-							dist = np.sqrt(
-								(points[-1][0] - points[0][0])**2 +
-								(points[-1][1] - points[0][1])**2
-							)
+			points.append((x, test_y))
 
-							return min(dist / 300.0, 1.0)
+			collision = self.find_collision(
+				x,
+				test_y,
+				test_y - 1,
+				current_level,
+				360
+			)
 
-		self.debug_rays.append((points, "none"))
+			if collision is None:
+				continue
 
-		return 1.0
+			if collision["collision_kind"] == "floor":
+
+				self.debug_ground_rays.append(
+					(points.copy(), "floor")
+				)
+
+				return 1.0 - (d / max_distance)
+
+		self.debug_ground_rays.append(
+			(points.copy(), sensor_name)
+		)
+
+		return 0.0
 	
+
+	def get_ground_sensors(self):
+
+		shoulder_y = (
+			self.king.rect.top
+			+ self.king.rect.height * 0.3
+		)
+
+		left_x = self.king.rect.left + 4
+
+		center_x = self.king.rect.centerx
+
+		right_x = self.king.rect.right - 4
+
+		left_ground = self.cast_ground_ray(
+			left_x,
+			shoulder_y,
+			"left"
+		)
+
+		center_ground = self.cast_ground_ray(
+			center_x,
+			shoulder_y,
+			"center"
+		)
+
+		right_ground = self.cast_ground_ray(
+			right_x,
+			shoulder_y,
+			"right"
+		)
+
+		return (
+			left_ground,
+			center_ground,
+			right_ground
+		)
 	
-	
+
+	def get_ray_jump_vector(self, jump_count, direction):
+
+		speed = (
+			1.5 +
+			((jump_count / 5) ** 1.13)
+		)
+
+		if direction == "up":
+
+			angle = 0
+
+		else:
+
+			angle = (
+				self.king.jumpAngles[direction]
+				*
+				(1 - jump_count / 45.5)
+			)
+
+			speed += 0.9
+
+		# exactamente igual que add_vectors(0,0,...)
+		x = math.sin(angle) * speed
+		y = math.cos(angle) * speed
+
+		angle = math.pi/2 - math.atan2(y, x)
+		length = math.hypot(x, y)
+
+		# convertir a velocidades cartesianas
+		vx = math.sin(angle) * length
+		vy = -math.cos(angle) * length
+
+		return vx, vy
+			
 	
 	def get_state(self):
 
+		self.debug_ground_rays.clear()
+
+		self.get_ground_sensors()
+
 		x = self.king.rect.centerx
-		y = self.king.rect.bottom - 7
+		y = self.king.rect.bottom - 2
 
 		state = []
 
-		# trayectorias predictivas
-		# (vx, vy)
-		trajectories = [
+		jump_counts = [
+		
+		30
+	]
+		
 
-			 #saltos pequeños
-			(-6, -6),
-			(6, -6),
-			
-			#,
+		if not hasattr(self, "_printed_rays"):
 
-			# saltos medios
-			(-7, -8),
-			(7, -8),
+			for jump_count in jump_counts:
 
-			# saltos medio-alto	
-			(-7, -12),
-			(7, -12),
+				vx, vy = self.get_ray_jump_vector(
+					jump_count,
+					"right"
+				)
 
-			# longo
-			(-7, -16),
-			(7, -16)
-		]
+				print(
+					"RIGHT",
+					jump_count,
+					round(vx, 2),
+					round(vy, 2)
+				)
 
-		for vx, vy in trajectories:
+			self._printed_rays = True
 
-			dist = self.cast_trajectory(
+		for jump_count in jump_counts:
+
+			# izquierda
+			vx, vy = self.get_ray_jump_vector(
+				jump_count,
+				"left"
+			)
+
+			result = self.evaluate_jump(
 				x,
 				y,
 				vx,
 				vy
 			)
 
-			state.append(dist)
+			state.append(
+				1.0 if result.valid_floor else 0.0
+			)
+
+			state.append(
+				result.relative_height
+			)
+	
+
+			# derecha
+			vx, vy = self.get_ray_jump_vector(
+				jump_count,
+				"right"
+			)
+
+			result = self.evaluate_jump(
+				x,
+				y,
+				vx,
+				vy
+			)
+
+			state.append(
+				1.0 if result.valid_floor else 0.0
+			)
+
+			state.append(
+				result.relative_height
+			)
 
 		# altura global normalizada
 		level = self.king.levels.current_level
@@ -967,3 +1234,28 @@ class JKGame:
 				(start_x, start_y),
 				3
 			)
+
+		for points, sensor_name in self.debug_ground_rays:
+
+			if len(points) < 2:
+				continue
+
+			if sensor_name == "left":
+
+				color = (255, 0, 0)
+
+			elif sensor_name == "center":
+
+				color = (0, 255, 0)
+
+			else:
+
+				color = (0, 150, 255)
+
+			pygame.draw.lines(
+				self.game_screen,
+				color,
+				False,
+				[(int(px), int(py)) for px, py in points],
+				2
+			)	
