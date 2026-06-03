@@ -186,7 +186,7 @@ class JKGame:
 		#self.game_screen = pygame.Surface((int(os.environ.get("screen_width")), int(os.environ.get("screen_height"))), pygame.HWSURFACE|pygame.DOUBLEBUF)#|pygame.SRCALPHA)
 
 
-		preview_height = 80
+		preview_height = 160
 
 		screen_width = int(os.environ.get("screen_width"))
 		screen_height = int(os.environ.get("screen_height"))
@@ -429,18 +429,18 @@ class JKGame:
 
 			scale = int(os.environ.get("window_scale"))
 
-			preview_height_px = 80 * scale
+			preview_height_px = 160 * scale
 
 			next_level = self.levels.levels[next_level_id]
 
-			VISIBLE_START = 280
+			VISIBLE_START = 200
 
 			for p in next_level.platforms:
 
 				rect = p.rect
 
 				# ignorar todo lo que no esté en los
-				# últimos 80 px del nivel siguiente
+				# últimos 160 px del nivel siguiente
 				if rect.bottom < VISIBLE_START:
 					continue
 
@@ -469,79 +469,97 @@ class JKGame:
 
 			for points, collision_type in self.debug_rays:
 
-				preview_points = []
+				visible_segments = []
+				current_segment = []
 
 				for px, py in points:
 
-					if -80 <= py <= 0:
+					if -160 <= py <= 0:
 
-						preview_y = int((py + 80) * scale)
-
-						preview_points.append(
+						current_segment.append(
 							(
 								int(px * scale),
-								preview_y
+								int((py + 160) * scale)
 							)
 						)
 
-				if len(preview_points) >= 2:
+					else:
+
+						if len(current_segment) >= 2:
+							visible_segments.append(
+								current_segment
+							)
+
+						current_segment = []
+
+				if len(current_segment) >= 2:
+
+					visible_segments.append(
+						current_segment
+					)
+
+				# ==========================
+				# DIBUJAR SEGMENTOS VISIBLES
+				# ==========================
+
+				for segment in visible_segments:
 
 					pygame.draw.lines(
 						self.screen,
 						(0, 255, 0),
 						False,
-						preview_points,
+						segment,
 						2
 					)
 
-					# ==========================
-					# CRUZ FINAL
-					# SOLO SI LA COLISIÓN REAL
-					# OCURRE DENTRO DE LA PREVIEW
-					# ==========================
+				# ==========================
+				# CRUZ FINAL
+				# ==========================
 
-					real_end_x, real_end_y = points[-1]
+				real_end_x, real_end_y = points[-1]
 
-					if -80 <= real_end_y <= 0:
+				if -160 <= real_end_y <= 0:
 
-						end_x = int(real_end_x * scale)
-						end_y = int((real_end_y + 80) * scale)
+					end_x = int(real_end_x * scale)
+					end_y = int((real_end_y + 160) * scale)
 
-						size = 5
+					size = 5
 
-						if collision_type == "wall":
-							color = (0, 100, 255)
+					if collision_type == "wall":
+						color = (0, 100, 255)
 
-						elif collision_type == "floor":
-							color = (150, 150, 150)
+					elif collision_type == "floor":
+						color = (150, 150, 150)
 
-						elif collision_type == "ceiling":
-							color = (255, 0, 0)
+					elif collision_type == "ceiling":
+						color = (255, 0, 0)
 
-						else:
-							color = (255, 255, 255)
+					else:
+						color = (255, 255, 255)
 
-						pygame.draw.line(
-							self.screen,
-							color,
-							(end_x - size, end_y - size),
-							(end_x + size, end_y + size),
-							2
-						)
+					pygame.draw.line(
+						self.screen,
+						color,
+						(end_x - size, end_y - size),
+						(end_x + size, end_y + size),
+						2
+					)
 
-						pygame.draw.line(
-							self.screen,
-							color,
-							(end_x - size, end_y + size),
-							(end_x + size, end_y - size),
-							2
-						)
+					pygame.draw.line(
+						self.screen,
+						color,
+						(end_x - size, end_y + size),
+						(end_x + size, end_y - size),
+						2
+					)
 
-					# ==========================
-					# PUNTO ORIGEN
-					# ==========================
+				# ==========================
+				# PUNTO ORIGEN
+				# ==========================
 
-					start_x, start_y = preview_points[0]
+				if len(visible_segments) > 0:
+
+					start_x, start_y = visible_segments[0][0]
 
 					pygame.draw.circle(
 						self.screen,
@@ -696,11 +714,15 @@ class JKGame:
 				for p in self.levels.levels[lvl].platforms:
 
 					rect = p.rect
-
-					hit = rect.clipline(
-						(prev_x, prev_local_py),
-						(x, local_py)
+					# cambiamos la hitbox del rayo para que tenga en cuenta el tamaño del jugador asi mostramos tambien colisiones  relevantes
+					ghost_rect = pygame.Rect(
+						int(x - 1),
+						int(local_py - self.king.rect.height//2),
+						2,
+						self.king.rect.height
 					)
+
+					hit = ghost_rect.colliderect(rect)
 
 					
 
@@ -752,16 +774,15 @@ class JKGame:
 
 					elif min_dist == dy_bottom:
 
-						self.debug_rays.append(
-							(points, "ceiling")
-						)
+						vy = 0.0
 
-						dist = np.sqrt(
-							(points[-1][0] - points[0][0])**2 +
-							(points[-1][1] - points[0][1])**2
-						)
+						vx *= 0.5
 
-						return min(dist / 300.0, 1.0)
+						y += 2
+
+						collision_handled = True
+
+						break
 
 					# ======================================
 					# PARED
@@ -813,7 +834,7 @@ class JKGame:
 	def get_state(self):
 
 		x = self.king.rect.centerx
-		y = self.king.rect.bottom - 2
+		y = self.king.rect.bottom - 7
 
 		state = []
 
@@ -822,16 +843,20 @@ class JKGame:
 		trajectories = [
 
 			 #saltos pequeños
-			#(-3, -8),
-			#(3, -8)
+			(-6, -6),
+			(6, -6),
 			
 			#,
 
 			# saltos medios
-			#(-5, -12),
-			#(5, -12),
+			(-7, -8),
+			(7, -8),
 
-			# saltos largos
+			# saltos medio-alto	
+			(-7, -12),
+			(7, -12),
+
+			# longo
 			(-7, -16),
 			(7, -16)
 		]
