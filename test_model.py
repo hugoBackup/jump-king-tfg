@@ -3,27 +3,30 @@ import os
 os.environ["render"] = "1"
 
 from stable_baselines3 import PPO
-from jumpKingLongo import JumpKingLongo
+from JumpKingMulti import JumpKingMulti
 
-env = JumpKingLongo()
+env = JumpKingMulti()
 
-model = PPO.load("ppo_jumpking_discreto")
+model = PPO.load(
+"ppo_jumpking_multi",
+env=env
+)
 
-obs, _ = env.reset()
+obs, info = env.reset()
 
 while True:
+
 
     action, _ = model.predict(
         obs,
         deterministic=True
     )
 
-    obs, reward, terminated, truncated, _ = env.step(
+    obs, reward, terminated, truncated, info = env.step(
         action
     )
 
     if terminated or truncated:
 
-        print("RESET")
+        obs, info = env.reset()
 
-        obs, _ = env.reset()

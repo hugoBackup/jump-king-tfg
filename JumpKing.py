@@ -237,6 +237,12 @@ class JKGame:
 		self.visited = {}
 		self.debug_rays = []
 		self.debug_ground_rays = []
+		self.cached_jump_state = [
+			0.0,
+			0.0,
+			0.0,
+			0.0
+		]
 
 
 		pygame.display.set_caption('Pot la IA esdevenir el Jump King ? ')
@@ -298,7 +304,7 @@ class JKGame:
 
 		self._check_events()
 
-		juegoYO = false
+		juegoYO = true 
 
 		if juegoYO:
 
@@ -813,7 +819,7 @@ class JKGame:
 		current_level = self.king.levels.current_level
 		level_height = 360
 
-		points = []
+		points = [(x, y)]
 		result = JumpPredictionResult()
 
 		origin_y = y
@@ -838,9 +844,11 @@ class JKGame:
 				or y > 720
 			):
 
-				self.debug_rays.append(
-					(points, "none")
-				)
+				if os.environ.get("render", "0") == "1":
+
+					self.debug_rays.append(
+						(points, "none")
+					)
 
 				return  result
 
@@ -879,12 +887,14 @@ class JKGame:
 						1.0
 					)
 
-				self.debug_rays.append(
-					(
-						points,
-						"floor"
+				if os.environ.get("render", "0") == "1":
+
+					self.debug_rays.append(
+						(
+							points,
+							"floor"
+						)
 					)
-				)
 				result.collision_type = "floor"
 
 				return result
@@ -904,9 +914,11 @@ class JKGame:
 				if not has_bounced:
 					result.wall_bounces += 1
 
-					self.debug_rays.append(
-						(points.copy(), "wall")
-					)
+					if os.environ.get("render", "0") == "1":
+
+						self.debug_rays.append(
+							(points.copy(), "wall")
+						)
 
 					bounce = self.handle_wall_bounce(
 						x,
@@ -930,15 +942,19 @@ class JKGame:
 
 					result.collision_type = "wall"
 
-					self.debug_rays.append(
-						(points, "wall")
-					)
+					if os.environ.get("render", "0") == "1":
+
+						self.debug_rays.append(
+							(points.copy(), "wall")
+						)
 
 					return result
 
-		self.debug_rays.append(
-			(points, "none")
-		)
+		if os.environ.get("render", "0") == "1":
+
+			self.debug_rays.append(
+				(points, "none")
+			)
 
 		return result
 
@@ -973,15 +989,19 @@ class JKGame:
 
 			if collision["collision_kind"] == "floor":
 
-				self.debug_ground_rays.append(
-					(points.copy(), "floor")
-				)
+				if os.environ.get("render", "0") == "1":
+
+					self.debug_ground_rays.append(
+						(points.copy(), "floor")
+					)
 
 				return 1.0 - (d / max_distance)
 
-		self.debug_ground_rays.append(
-			(points.copy(), sensor_name)
-		)
+			if os.environ.get("render", "0") == "1":
+
+				self.debug_ground_rays.append(
+					(points.copy(), sensor_name)
+				)
 
 		return 0.0
 	
@@ -993,11 +1013,11 @@ class JKGame:
 			+ self.king.rect.height * 0.3
 		)
 
-		left_x = self.king.rect.left + 4
+		left_x = self.king.rect.left 
 
 		center_x = self.king.rect.centerx
 
-		right_x = self.king.rect.right - 4
+		right_x = self.king.rect.right 
 
 		left_ground = self.cast_ground_ray(
 			left_x,
@@ -1066,13 +1086,12 @@ class JKGame:
 		self.get_ground_sensors()
 
 		x = self.king.rect.centerx
-		y = self.king.rect.bottom - 2
+		y = self.king.rect.bottom - 4
 
 		state = []
 
 		jump_counts = [
-		
-		30
+		10,20,25,30
 	]
 		
 
@@ -1173,6 +1192,7 @@ class JKGame:
 	def draw_debug_rays(self):
 
 		for points, collision_type in self.debug_rays:
+
 
 			if len(points) < 2:
 				continue

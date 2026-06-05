@@ -5,7 +5,7 @@ import numpy as np
 from JumpKing import JKGame
 
 
-class JumpKingLongo(gym.Env):
+class JumpKingMulti(gym.Env):
 
 	def __init__(self):
 
@@ -19,7 +19,7 @@ class JumpKingLongo(gym.Env):
 		# 1 = caminar derecha
 		# 2 = salto largo izquierda
 		# 3 = salto largo derecha
-		self.action_space = spaces.Discrete(4)
+		self.action_space = spaces.Discrete(10)
 
 		self.game.reset()
 
@@ -48,7 +48,7 @@ class JumpKingLongo(gym.Env):
 		# TOTAL = 11
 		#
 		sample_state = np.zeros(
-			11,
+			23,
 			dtype=np.float32
 		)
 
@@ -68,11 +68,8 @@ class JumpKingLongo(gym.Env):
 		self.consecutive_good_jumps = 0
 
 		self.cached_jump_state = [
-			0.0,
-			0.0,
-			0.0,
 			0.0
-		]
+		] * 16
 
 		self.cached_ground_state = [
 			0.0,
@@ -103,6 +100,7 @@ class JumpKingLongo(gym.Env):
 		return self.get_state(), {}
 
 	def step(self, action):
+		print("ACTION RECIBIDA:", action)
 
 		old_level = self.game.king.levels.current_level
 		old_y = self.game.king.y
@@ -170,7 +168,7 @@ class JumpKingLongo(gym.Env):
 			new_height - old_height
 		)
 
-		if action in [2, 3] and height_gain > 20:
+		if action >= 2 and height_gain > 20:
 
 			self.consecutive_good_jumps += 1
 
@@ -193,6 +191,29 @@ class JumpKingLongo(gym.Env):
 		truncated = (
 			self.current_step >= 1000
 		)
+
+
+		action_names = {
+			0: "L",
+			1: "R",
+			2: "J10L",
+			3: "J10R",
+			4: "J20L",
+			5: "J20R",
+			6: "J25L",
+			7: "J25R",
+			8: "J30L",
+			9: "J30R"
+		}
+
+		print(
+			f"{action_names[action]} | "
+			f"height={new_height:.1f} | "
+			f"gain={height_gain:.1f} | "
+			f"reward={reward:.3f}"
+		)
+
+		
 
 		return (
 			self.get_state(),
@@ -227,63 +248,39 @@ class JumpKingLongo(gym.Env):
 		state = []
 		if self.game.move_available():
 
+			jump_counts = [10, 20, 25, 30]
+
 			jump_state = []
 
-			# =====================
-			# SALTO IZQUIERDA
-			# =====================
+			for jump_count in jump_counts:
 
-			vx, vy = self.game.get_ray_jump_vector(
-				30,
-				"left"
-			)
+				for direction in ["left", "right"]:
 
-			result = self.game.evaluate_jump(
-				x,
-				y,
-				vx,
-				vy
-			)
+					vx, vy = self.game.get_ray_jump_vector(
+						jump_count,
+						direction
+					)
 
-			jump_state.append(
-				1.0 if result.valid_floor else 0.0
-			)
+					result = self.game.evaluate_jump(
+						x,
+						y,
+						vx,
+						vy
+					)
 
-			jump_state.append(
-				result.relative_height
-			)
+					jump_state.append(
+						1.0 if result.valid_floor else 0.0
+					)
 
-			# =====================
-			# SALTO DERECHA
-			# =====================
-
-			vx, vy = self.game.get_ray_jump_vector(
-				30,
-				"right"
-			)
-
-			result = self.game.evaluate_jump(
-				x,
-				y,
-				vx,
-				vy
-			)
-
-			jump_state.append(
-				1.0 if result.valid_floor else 0.0
-			)
-
-			jump_state.append(
-				result.relative_height
-			)
+					jump_state.append(
+						result.relative_height
+					)
 
 			self.cached_jump_state = jump_state
 
-			state.extend(
-				self.cached_jump_state
-			)
-
-
+		state.extend(
+			self.cached_jump_state
+		)
 		# =====================
 		# SENSORES DE SUELO
 		# =====================
@@ -362,30 +359,64 @@ class JumpKingLongo(gym.Env):
 
 	def execute_action(self, action):
 
-		# caminar izquierda
 		if action == 0:
-
 			self.game.step(3)
 
-		# caminar derecha
 		elif action == 1:
-
 			self.game.step(2)
 
-		# salto largo izquierda
 		elif action == 2:
 
-			for _ in range(30):
-
+			for _ in range(10):
 				self.game.step(3)
 
 			self.game.step(1)
 
-		# salto largo derecha
 		elif action == 3:
 
-			for _ in range(30):
+			for _ in range(10):
+				self.game.step(2)
 
+			self.game.step(0)
+
+		elif action == 4:
+
+			for _ in range(20):
+				self.game.step(3)
+
+			self.game.step(1)
+
+		elif action == 5:
+
+			for _ in range(20):
+				self.game.step(2)
+
+			self.game.step(0)
+
+		elif action == 6:
+
+			for _ in range(25):
+				self.game.step(3)
+
+			self.game.step(1)
+
+		elif action == 7:
+
+			for _ in range(25):
+				self.game.step(2)
+
+			self.game.step(0)
+
+		elif action == 8:
+
+			for _ in range(30):
+				self.game.step(3)
+
+			self.game.step(1)
+
+		elif action == 9:
+
+			for _ in range(30):
 				self.game.step(2)
 
 			self.game.step(0)
