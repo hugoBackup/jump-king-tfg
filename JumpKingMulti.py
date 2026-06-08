@@ -93,6 +93,11 @@ class JumpKingMulti(gym.Env):
 
 		self.game.reset()
 
+		self.best_height = self.game.get_global_height(
+			self.game.king.levels.current_level,
+			self.game.king.y
+		)
+
 		if hasattr(self, "prev_y"):
 
 			del self.prev_y
@@ -100,6 +105,7 @@ class JumpKingMulti(gym.Env):
 		return self.get_state(), {}
 
 	def step(self, action):
+
 		print("ACTION RECIBIDA:", action)
 
 		old_level = self.game.king.levels.current_level
@@ -140,7 +146,7 @@ class JumpKingMulti(gym.Env):
 		reward = -0.01
 
 		# ==================================
-		# EXPLORACIÓN DE PLATAFORMA
+		# EXPLORACIÓN
 		# ==================================
 
 		bucket_x = int(
@@ -161,20 +167,54 @@ class JumpKingMulti(gym.Env):
 			reward += 0.05
 
 		# ==================================
-		# SALTO CORRECTO
+		# PROGRESO VERTICAL
 		# ==================================
 
 		height_gain = (
 			new_height - old_height
 		)
 
-		if action >= 2 and height_gain > 20:
+		# penalizar caídas
+
+		if height_gain < 0:
+
+			reward -= 1.0
+
+			reward += height_gain / 100.0
+
+		# ==================================
+		# SALTOS BUENOS
+		# SOLO SI SUPERA LA ALTURA
+		# MÁXIMA HISTÓRICA
+		# ==================================
+
+		if (
+			action >= 2
+			and height_gain > 20
+		):
 
 			self.consecutive_good_jumps += 1
 
-			reward += self.fibonacci(
-				self.consecutive_good_jumps
+			base_reward = (
+				5.0 *
+				self.fibonacci(
+					self.consecutive_good_jumps
+				)
 			)
+
+			# récord = doble recompensa
+
+			if new_height > self.best_height:
+
+				self.best_height = new_height
+
+				reward += (
+					base_reward * 2.0
+				)
+
+			else:
+
+				reward += base_reward
 
 		else:
 
@@ -192,7 +232,6 @@ class JumpKingMulti(gym.Env):
 			self.current_step >= 1000
 		)
 
-
 		action_names = {
 			0: "L",
 			1: "R",
@@ -206,14 +245,9 @@ class JumpKingMulti(gym.Env):
 			9: "J30R"
 		}
 
-		print(
-			f"{action_names[action]} | "
-			f"height={new_height:.1f} | "
-			f"gain={height_gain:.1f} | "
-			f"reward={reward:.3f}"
-		)
+		action = int(action)
 
-		
+		print(f"{action_names[action]} | "f"height={new_height:.1f} | "f"gain={height_gain:.1f} | "f"best={self.best_height:.1f} | "f"reward={reward:.3f}")
 
 		return (
 			self.get_state(),
@@ -222,7 +256,6 @@ class JumpKingMulti(gym.Env):
 			truncated,
 			{}
 		)
-
 
 	def fibonacci(self, n):
 

@@ -17,7 +17,7 @@ model = PPO(
 checkpoint_callback = CheckpointCallback(
 	save_freq=10_000,
 	save_path="./checkpoints",
-	name_prefix="jumpking_multi"
+	name_prefix="matrix1.1"
 )
 
 model.learn(
@@ -26,5 +26,5 @@ model.learn(
 )
 
 model.save(
-	"ppo_jumpking_multi"
+	"jumpkingMatrix1.1"
 )
