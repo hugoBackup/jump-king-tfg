@@ -307,7 +307,7 @@ class JKGame:
 
 		self._check_events()
 
-		juegoYO =	true
+		juegoYO =	false
 		verRayos = false
 
 		if juegoYO:

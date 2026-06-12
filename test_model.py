@@ -4,11 +4,12 @@ os.environ["render"] = "1"
 
 from stable_baselines3 import PPO
 from JumpKingMulti import JumpKingMulti
+from JumpKingSinRL import JumpKingSinRL
 
-env = JumpKingMulti()
+env = JumpKingSinRL()
 
 model = PPO.load(
-"checkpoints/matrix2.5_440192_steps",
+"checkpointSinRL/sinRL_60000_steps",
 env=env
 )
 

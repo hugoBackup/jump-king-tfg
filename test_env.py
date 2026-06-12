@@ -1,9 +1,12 @@
 from JumpKingMulti import JumpKingMulti
+from JumpKingSinRL import JumpKingSinRL
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
 
 
-env = JumpKingMulti()
+env = JumpKingSinRL()
+
+print("////////////////MlpPolicy////////////////////")
 
 model = PPO(
 	"MlpPolicy",
@@ -16,15 +19,15 @@ model = PPO(
 
 checkpoint_callback = CheckpointCallback(
 	save_freq=10_000,
-	save_path="./checkpointMatrixFlood",
-	name_prefix="matrixFlood"
+	save_path="./checkpointSinRL",
+	name_prefix="sinRL"
 )
 
 model.learn(
-	total_timesteps=300_000,
+	total_timesteps=500_000,
 	callback=checkpoint_callback
 )
 
 model.save(
-	"jumpkingMatrixFlood"
+	"jumpkingSinRLMlp"
 )

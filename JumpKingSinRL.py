@@ -5,7 +5,7 @@ import numpy as np
 from JumpKing import JKGame
 
 
-class JumpKingMulti(gym.Env):
+class JumpKingSinRL(gym.Env):
 
 	def __init__(self):
 
@@ -19,7 +19,7 @@ class JumpKingMulti(gym.Env):
 		# 1 = caminar derecha
 		# 2 = salto largo izquierda
 		# 3 = salto largo derecha
-		self.action_space = spaces.Discrete(10)
+		self.action_space = spaces.Discrete(8)
 
 		self.game.reset()
 
@@ -118,22 +118,19 @@ class JumpKingMulti(gym.Env):
 
 		old_height = self.game.get_global_height(
 			old_level,
+		
 			old_y
 		)
-		self.game.last_action = int(action)
-		self.execute_action(action)
+
 		
+		self.game.last_action = int(action)
+		self.execute_action(action)		
 
 		max_sim_steps = 200
 
 		sim_steps = 0
 
-		lock_frames = self.execute_action(action)
-
-		for _ in range(lock_frames):
-
-			self.game.step(None)
-
+		
 		while (
 			not self.game.move_available()
 			and sim_steps < max_sim_steps
@@ -190,19 +187,17 @@ class JumpKingMulti(gym.Env):
 			new_height - old_height
 		)
 
-		if action >= 2:
+		 #antes era si accion es mayor que 2 pero ahora y ano puede caminar asi que asi se queda
 
-			if abs(height_gain) < 1:
+		if abs(height_gain) < 1:
 
-				self.same_height_jump_counter += 1
-
-			else:
-
-				self.same_height_jump_counter = 0
+			self.same_height_jump_counter += 1
 
 		else:
 
 			self.same_height_jump_counter = 0
+
+		
 
 		# ==================================
 		# PENALIZAR CAÍDAS
@@ -219,32 +214,27 @@ class JumpKingMulti(gym.Env):
 		# ==================================
 
 		if (
-			action >= 2
-			and height_gain > 20
+			height_gain > 20
 		):
 
 			self.consecutive_good_jumps += 1
 
 			base_reward = (
-				5.0 *
+				2.0 *
 				self.fibonacci(
 					self.consecutive_good_jumps
 				)
 			)
 
-			# récord = doble recompensa
-
 			if new_height > self.best_height:
 
 				self.best_height = new_height
 
-				reward += (
-					base_reward * 2.0
-				)
+				reward += base_reward * 2.0
 
 			else:
 
-				reward += base_reward
+				reward += base_reward * 0.25
 
 		else:
 
@@ -263,16 +253,14 @@ class JumpKingMulti(gym.Env):
 		)
 
 		action_names = {
-			0: "L",
-			1: "R",
-			2: "J10L",
-			3: "J10R",
-			4: "J20L",
-			5: "J20R",
-			6: "J25L",
-			7: "J25R",
-			8: "J30L",
-			9: "J30R"
+			0: "J10L",
+			1: "J10R",
+			2: "J20L",
+			3: "J20R",
+			4: "J25L",
+			5: "J25R",
+			6: "J30L",
+			7: "J30R"
 		}
 
 		action = int(action)
@@ -429,84 +417,56 @@ class JumpKingMulti(gym.Env):
 
 		if action == 0:
 
-			self.game.step(3)
-			return 0
+			for _ in range(10):
+				self.game.step(3)
+
+			self.game.step(1)
 
 		elif action == 1:
 
-			self.game.step(2)
-			return 0
+			for _ in range(10):
+				self.game.step(2)
+
+			self.game.step(0)
 
 		elif action == 2:
 
-			for _ in range(10):
+			for _ in range(20):
 				self.game.step(3)
 
 			self.game.step(1)
-
-			return 10
 
 		elif action == 3:
 
-			for _ in range(10):
+			for _ in range(20):
 				self.game.step(2)
 
 			self.game.step(0)
-
-			return 10
 
 		elif action == 4:
 
-			for _ in range(20):
+			for _ in range(25):
 				self.game.step(3)
 
 			self.game.step(1)
-
-			return 20
 
 		elif action == 5:
 
-			for _ in range(20):
+			for _ in range(25):
 				self.game.step(2)
 
 			self.game.step(0)
-
-			return 20
 
 		elif action == 6:
 
-			for _ in range(25):
+			for _ in range(30):
 				self.game.step(3)
 
 			self.game.step(1)
-
-			return 25
 
 		elif action == 7:
 
-			for _ in range(25):
-				self.game.step(2)
-
-			self.game.step(0)
-
-			return 25
-
-		elif action == 8:
-
-			for _ in range(30):
-				self.game.step(3)
-
-			self.game.step(1)
-
-			return 30
-
-		elif action == 9:
-
 			for _ in range(30):
 				self.game.step(2)
 
 			self.game.step(0)
-
-			return 30
-
-		return 0
