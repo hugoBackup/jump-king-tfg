@@ -8,7 +8,7 @@ from JumpKingMulti import JumpKingMulti
 env = JumpKingMulti()
 
 model = PPO.load(
-"checkpoints/matrix1.1_20000_steps",
+"checkpoints/matrix2.5_440192_steps",
 env=env
 )
 

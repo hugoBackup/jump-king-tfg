@@ -297,6 +297,9 @@ class JKGame:
 	
 
 	
+	
+
+	
 	def step(self, action):
 
 		# NO limitar FPS durante entrenamiento
@@ -304,7 +307,8 @@ class JKGame:
 
 		self._check_events()
 
-		juegoYO = false
+		juegoYO =	true
+		verRayos = false
 
 		if juegoYO:
 
@@ -316,12 +320,7 @@ class JKGame:
 			if not os.environ["pause"]:
 				self._update_gamestuff(action=action)
 
-		# =====================================
-		# DIBUJAR SI JUEGA EL HUMANO
-		# O SI EL RENDER ESTÁ ACTIVADO
-		# =====================================
-
-		if juegoYO or os.environ.get("render", "0") == "1":
+		if  os.environ.get("render", "0") == "1":
 
 			self._update_gamescreen()
 			self._update_guistuff()
@@ -433,7 +432,7 @@ class JKGame:
 
 			self.start.blitme()
 
-			
+		self.draw_input_overlay()	
 		self.get_state()
 		self.draw_debug_rays()
 		self.menus.blitme()
@@ -455,6 +454,7 @@ class JKGame:
 			next_level = self.levels.levels[next_level_id]
 
 			VISIBLE_START = 200
+			PREVIEW_PADDING = 0
 
 			for p in next_level.platforms:
 
@@ -465,11 +465,13 @@ class JKGame:
 				if rect.bottom < VISIBLE_START:
 					continue
 
+				
+
 				preview_rect = pygame.Rect(
 
 					int(rect.x * scale),
 
-					int((rect.y - VISIBLE_START) * scale),
+					int((rect.y - VISIBLE_START - PREVIEW_PADDING) * scale),
 
 					int(rect.width * scale),
 
@@ -496,13 +498,16 @@ class JKGame:
 				for px, py in points:
 
 					if -160 <= py <= 0:
+						PREVIEW_DRAW_OFFSET = 15
+
 
 						current_segment.append(
 							(
 								int(px * scale),
-								int((py + 160) * scale)
+								int((py + 160 + PREVIEW_DRAW_OFFSET) * scale)		
 							)
 						)
+						
 
 					else:
 
@@ -542,7 +547,12 @@ class JKGame:
 				if -160 <= real_end_y <= 0:
 
 					end_x = int(real_end_x * scale)
-					end_y = int((real_end_y + 160) * scale)
+					PREVIEW_DRAW_OFFSET = 15
+
+					end_y = int(
+						(real_end_y + 160 + PREVIEW_DRAW_OFFSET)
+						* scale
+					)
 
 					size = 5
 
@@ -674,13 +684,13 @@ class JKGame:
 	
 	
 
-	def get_ray_rect(self, x, local_py):
+	def get_ray_rect(self, x, local_py):#problemon 
 
 		return pygame.Rect(
 			int(x - 1),
-			int(local_py - self.king.rect.height // 1.2 ),
+			int(local_py - 10),
 			2,
-			self.king.rect.height * 1.2
+			20
 		)
 	
 
@@ -764,6 +774,12 @@ class JKGame:
 
 			if not (0 <= lvl < len(self.levels.levels)):
 				continue
+			
+
+			
+			
+
+			PREVIEW_OFFSET = 10
 
 			local_py = y + (
 				(lvl - current_level)
@@ -774,6 +790,11 @@ class JKGame:
 				(lvl - current_level)
 				* level_height
 			)
+
+			if lvl > current_level:
+
+				local_py += PREVIEW_OFFSET
+				prev_local_py += PREVIEW_OFFSET
 
 			for p in self.levels.levels[lvl].platforms:
 
@@ -819,11 +840,14 @@ class JKGame:
 		current_level = self.king.levels.current_level
 		level_height = 360
 
+		
+
 		points = [(x, y)]
 		result = JumpPredictionResult()
 
 		origin_y = y
 		has_bounced = False
+		has_hit_ceiling = False
 
 		for _ in range(max_steps):
 
@@ -900,12 +924,22 @@ class JKGame:
 				return result
 
 			elif collision_kind == "ceiling":
-				result.collision_type = "ceiling"
-				result.hit_ceiling = True
 
-				vy = 0.0
-				vx *= 0.5
-				y += 2
+				if not has_hit_ceiling:
+
+					if os.environ.get("render", "0") == "1":
+
+						self.debug_rays.append(
+							(points.copy(), "ceiling")
+						)
+
+					result.hit_ceiling = True
+
+					vy = 0.0
+					vx *= 0.2 #antes estaba en 0.5 pero creo que esto es mas preciso , ahora mismo hay rayos que presentan trayectorias malas
+					y += 2
+
+					has_hit_ceiling = True
 
 				continue
 
@@ -1086,7 +1120,7 @@ class JKGame:
 		self.get_ground_sensors()
 
 		x = self.king.rect.centerx
-		y = self.king.rect.bottom - 4
+		y = self.king.rect.bottom -4
 
 		state = []
 
@@ -1115,6 +1149,11 @@ class JKGame:
 
 		for jump_count in jump_counts:
 
+			ray_y = y
+
+			if jump_count == 10:
+				ray_y -= 2
+
 			# izquierda
 			vx, vy = self.get_ray_jump_vector(
 				jump_count,
@@ -1123,7 +1162,7 @@ class JKGame:
 
 			result = self.evaluate_jump(
 				x,
-				y,
+				ray_y,
 				vx,
 				vy
 			)
@@ -1135,7 +1174,6 @@ class JKGame:
 			state.append(
 				result.relative_height
 			)
-	
 
 			# derecha
 			vx, vy = self.get_ray_jump_vector(
@@ -1145,7 +1183,7 @@ class JKGame:
 
 			result = self.evaluate_jump(
 				x,
-				y,
+				ray_y,
 				vx,
 				vy
 			)
@@ -1187,6 +1225,53 @@ class JKGame:
 		self.prev_y = y
 
 		return np.array(state, dtype=np.float32)
+	
+	def draw_input_overlay(self):
+
+		
+
+		font = pygame.font.SysFont(None, 24)
+
+		x = 20
+		y = 20
+
+		action = getattr(self, "last_action", -1)
+
+		left  = action in [0,2,4,6,8]
+		right = action in [1,3,5,7,9]
+		jump  = action in [2,3,4,5,6,7,8,9]
+
+		def draw_key(label, px, py, active):
+
+			color = (
+				(0,255,0)
+				if active
+				else
+				(100,100,100)
+			)
+
+			pygame.draw.rect(
+				self.game_screen,
+				color,
+				(px, py, 40, 40),
+				2
+			)
+
+			text = font.render(
+				label,
+				True,
+				color
+			)
+
+			self.game_screen.blit(
+				text,
+				(px + 12, py + 10)
+			)
+
+		draw_key("↑", x + 50, y, jump)
+		draw_key("←", x, y + 50, left)
+		draw_key("␣", x + 50, y + 50, jump)
+		draw_key("→", x + 100, y + 50, right)
 	
 	
 	def draw_debug_rays(self):

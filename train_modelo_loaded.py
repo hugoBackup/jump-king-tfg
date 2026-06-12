@@ -5,26 +5,23 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 
 env = JumpKingMulti()
 
-model = PPO(
-	"MlpPolicy",
-	env,
-	verbose=1,
-	learning_rate=3e-4,
-	n_steps=512,
-	batch_size=64
+model = PPO.load(
+	"JumpKingMatrix2.0",
+	env=env
 )
 
 checkpoint_callback = CheckpointCallback(
 	save_freq=10_000,
-	save_path="./checkpointMatrixFlood",
-	name_prefix="matrixFlood"
+	save_path="./checkpoints",
+	name_prefix="matrix2.5"
 )
 
 model.learn(
 	total_timesteps=300_000,
-	callback=checkpoint_callback
+	callback=checkpoint_callback,
+	reset_num_timesteps=False
 )
 
 model.save(
-	"jumpkingMatrixFlood"
+	"jumpkingMatrix2.5"
 )

@@ -19,7 +19,7 @@ class JumpKingMulti(gym.Env):
 		# 1 = caminar derecha
 		# 2 = salto largo izquierda
 		# 3 = salto largo derecha
-		self.action_space = spaces.Discrete(10)
+		self.action_space = spaces.Discrete(8)
 
 		self.game.reset()
 
@@ -85,11 +85,16 @@ class JumpKingMulti(gym.Env):
 
 		super().reset(seed=seed)
 
+		self.episode_reward = 0.0
+
 		self.current_step = 0
 
 		self.visited_positions.clear()
 
 		self.consecutive_good_jumps = 0
+		self.same_height_jump_counter = 0
+		self.same_height_counter = 0
+		self.last_height = None
 
 		self.game.reset()
 
@@ -113,15 +118,19 @@ class JumpKingMulti(gym.Env):
 
 		old_height = self.game.get_global_height(
 			old_level,
+		
 			old_y
 		)
 
-		self.execute_action(action)
+		height_bucket = int(new_height / 10)
+		self.game.last_action = int(action)
+		self.execute_action(action)		
 
 		max_sim_steps = 200
 
 		sim_steps = 0
 
+		
 		while (
 			not self.game.move_available()
 			and sim_steps < max_sim_steps
@@ -143,7 +152,11 @@ class JumpKingMulti(gym.Env):
 		# RECOMPENSA BASE
 		# ==================================
 
-		reward = -0.01
+		reward = -0.5
+
+		if self.same_height_jump_counter >= 3:
+
+			reward -= 1.0
 
 		# ==================================
 		# EXPLORACIÓN
@@ -174,7 +187,21 @@ class JumpKingMulti(gym.Env):
 			new_height - old_height
 		)
 
-		# penalizar caídas
+		 #antes era si accion es mayor que 2 pero ahora y ano puede caminar asi que asi se queda
+
+		if abs(height_gain) < 1:
+
+			self.same_height_jump_counter += 1
+
+		else:
+
+			self.same_height_jump_counter = 0
+
+		
+
+		# ==================================
+		# PENALIZAR CAÍDAS
+		# ==================================
 
 		if height_gain < 0:
 
@@ -184,13 +211,10 @@ class JumpKingMulti(gym.Env):
 
 		# ==================================
 		# SALTOS BUENOS
-		# SOLO SI SUPERA LA ALTURA
-		# MÁXIMA HISTÓRICA
 		# ==================================
 
 		if (
-			action >= 2
-			and height_gain > 20
+			height_gain > 20
 		):
 
 			self.consecutive_good_jumps += 1
@@ -202,23 +226,25 @@ class JumpKingMulti(gym.Env):
 				)
 			)
 
-			# récord = doble recompensa
-
 			if new_height > self.best_height:
 
 				self.best_height = new_height
 
-				reward += (
-					base_reward * 2.0
-				)
+				reward += base_reward * 2.0
 
 			else:
 
-				reward += base_reward
+				if height_bucket in self.visited_heights:
 
-		else:
+					reward += base_reward * 0.25
 
-			self.consecutive_good_jumps = 0
+				else:
+
+					reward += base_reward
+
+					self.visited_heights.add(
+						height_bucket
+					)
 
 		# ==================================
 		# FIN EPISODIO
@@ -233,22 +259,24 @@ class JumpKingMulti(gym.Env):
 		)
 
 		action_names = {
-			0: "L",
-			1: "R",
-			2: "J10L",
-			3: "J10R",
-			4: "J20L",
-			5: "J20R",
-			6: "J25L",
-			7: "J25R",
-			8: "J30L",
-			9: "J30R"
+			0: "J10L",
+			1: "J10R",
+			2: "J20L",
+			3: "J20R",
+			4: "J25L",
+			5: "J25R",
+			6: "J30L",
+			7: "J30R"
 		}
 
 		action = int(action)
 
-		print(f"{action_names[action]} | "f"height={new_height:.1f} | "f"gain={height_gain:.1f} | "f"best={self.best_height:.1f} | "f"reward={reward:.3f}")
+		self.episode_reward += reward
 
+		print(f"{action_names[action]} | "f"height={new_height:.1f} | "f"gain={height_gain:.1f} | " f"best={self.best_height:.1f} | "f"reward={reward:.3f} | "f"total={self.episode_reward:.3f}")
+		
+		
+		
 		return (
 			self.get_state(),
 			reward,
@@ -256,6 +284,7 @@ class JumpKingMulti(gym.Env):
 			truncated,
 			{}
 		)
+
 
 	def fibonacci(self, n):
 
@@ -393,61 +422,55 @@ class JumpKingMulti(gym.Env):
 	def execute_action(self, action):
 
 		if action == 0:
-			self.game.step(3)
+
+			for _ in range(10):
+				self.game.step(3)
+
+			self.game.step(1)
 
 		elif action == 1:
-			self.game.step(2)
+
+			for _ in range(10):
+				self.game.step(2)
+
+			self.game.step(0)
 
 		elif action == 2:
 
-			for _ in range(10):
+			for _ in range(20):
 				self.game.step(3)
 
 			self.game.step(1)
 
 		elif action == 3:
 
-			for _ in range(10):
+			for _ in range(20):
 				self.game.step(2)
 
 			self.game.step(0)
 
 		elif action == 4:
 
-			for _ in range(20):
+			for _ in range(25):
 				self.game.step(3)
 
 			self.game.step(1)
 
 		elif action == 5:
 
-			for _ in range(20):
+			for _ in range(25):
 				self.game.step(2)
 
 			self.game.step(0)
 
 		elif action == 6:
 
-			for _ in range(25):
-				self.game.step(3)
-
-			self.game.step(1)
-
-		elif action == 7:
-
-			for _ in range(25):
-				self.game.step(2)
-
-			self.game.step(0)
-
-		elif action == 8:
-
 			for _ in range(30):
 				self.game.step(3)
 
 			self.game.step(1)
 
-		elif action == 9:
+		elif action == 7:
 
 			for _ in range(30):
 				self.game.step(2)
