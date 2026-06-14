@@ -9,7 +9,7 @@ from JumpKingSinRL import JumpKingSinRL
 env = JumpKingSinRL()
 
 model = PPO.load(
-"checkpointSinRL/sinRL_60000_steps",
+"jumpkingSinRLMlp",
 env=env
 )
 
