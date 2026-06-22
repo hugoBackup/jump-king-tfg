@@ -634,7 +634,7 @@ class King():
 
 						elif self._collide_top(platform):
 
-							self.rect_y = platform.bottom
+							self.rect_y = platform.rect.bottom
 							self.lastCollision = platform
 							self.collideTop = True
 
@@ -856,13 +856,40 @@ class King():
 		if direction != "up":
 			self.direction = direction
 
-		if self.lastCollision.snow:
+		if self.lastCollision is None:
+
+			print(
+				"lastCollision=None",
+				"level=", self.levels.current_level,
+				"x=", self.rect_x,
+				"y=", self.rect_y
+			)
+
+			self.angle, self.speed = self.physics.add_vectors(
+				self.angle,
+				self.speed,
+				angle,
+				speed
+			)
+
+		elif self.lastCollision.snow:
 
 			if speed > 2.5:
-				self.angle, self.speed = self.physics.add_vectors(self.angle, self.speed, angle, speed)
+				self.angle, self.speed = self.physics.add_vectors(
+					self.angle,
+					self.speed,
+					angle,
+					speed
+				)
 
 		else:
-			self.angle, self.speed = self.physics.add_vectors(self.angle, self.speed, angle, speed)
+
+			self.angle, self.speed = self.physics.add_vectors(
+				self.angle,
+				self.speed,
+				angle,
+				speed
+			)
 
 		self.isSplat = False
 		self.isJump = True

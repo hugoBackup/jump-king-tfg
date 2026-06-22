@@ -6,6 +6,8 @@ class JumpPredictionResult:
 
 		self.relative_height = 0.0
 
+		self.relative_x = 0.0
+
 		self.collision_type = "none"
 
 		self.points = []

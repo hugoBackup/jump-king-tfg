@@ -731,6 +731,7 @@ class JKGame:
 		x,
 		y,
 		vx,
+		vy,
 		rect
 	):
 
@@ -740,19 +741,15 @@ class JKGame:
 
 			x = rect.left - 2
 
-			side = "left"
-
 		else:
 
 			x = rect.right + 2
-
-			side = "right"
 
 		return {
 			"x": x,
 			"y": y,
 			"vx": vx,
-			"side": side
+			"vy": vy
 		}
 	
 
@@ -836,6 +833,12 @@ class JKGame:
 		max_steps=120,
 		gravity=0.27
 	):
+		
+		if (
+			not self.move_available()
+			and os.environ.get("render", "0") == "1"
+		):
+			return JumpPredictionResult()
 
 		current_level = self.king.levels.current_level
 		level_height = 360
@@ -846,6 +849,7 @@ class JKGame:
 		result = JumpPredictionResult()
 
 		origin_y = y
+		origin_x = x
 		has_bounced = False
 		has_hit_ceiling = False
 
@@ -891,6 +895,12 @@ class JKGame:
 			rect = collision["rect"]
 			local_py = collision["local_py"]
 
+			if (
+				collision_kind == "floor"
+				and vy < 0
+			):
+				collision_kind = "wall"
+
 			if collision_kind == "floor":
 				
 
@@ -908,6 +918,12 @@ class JKGame:
 
 					result.relative_height = min(
 						relative_height,
+						1.0
+					)
+
+					result.relative_x = np.clip(
+						(x - origin_x) / 480.0,
+						-1.0,
 						1.0
 					)
 
@@ -958,12 +974,14 @@ class JKGame:
 						x,
 						y,
 						vx,
+						vy,
 						rect
 					)
 
 					x = bounce["x"]
 					y = bounce["y"]
 					vx = bounce["vx"]
+					vy = bounce["vy"]
 
 					has_bounced = True
 
@@ -1047,11 +1065,9 @@ class JKGame:
 			+ self.king.rect.height * 0.3
 		)
 
-		left_x = self.king.rect.left 
-
+		left_x = self.king.rect.left
 		center_x = self.king.rect.centerx
-
-		right_x = self.king.rect.right 
+		right_x = self.king.rect.right
 
 		left_ground = self.cast_ground_ray(
 			left_x,
@@ -1071,10 +1087,12 @@ class JKGame:
 			"right"
 		)
 
+		
+
 		return (
-			left_ground,
-			center_ground,
-			right_ground
+			1.0 if left_ground > 0.5 else 0.0,
+			1.0 if center_ground > 0.5 else 0.0,
+			1.0 if right_ground > 0.5 else 0.0
 		)
 	
 
@@ -1125,7 +1143,7 @@ class JKGame:
 		state = []
 
 		jump_counts = [
-		10,20,25,30
+		5,10,20,25,30
 	]
 		
 
@@ -1153,6 +1171,10 @@ class JKGame:
 
 			if jump_count == 10:
 				ray_y -= 2
+
+			if jump_count == 5:
+				ray_y -= 4
+	
 
 			# izquierda
 			vx, vy = self.get_ray_jump_vector(
@@ -1219,12 +1241,24 @@ class JKGame:
 		velocity = y - self.prev_y
 
 		state.append(
-			np.tanh(velocity / 20.0)
+			np.tanh(
+				velocity / 20.0
+			)
+		)
+
+		state.append(
+			np.tanh(
+				(self.king.rect.centerx - 240)
+				/ 240.0
+			)
 		)
 
 		self.prev_y = y
 
-		return np.array(state, dtype=np.float32)
+		return np.array(
+			state,
+			dtype=np.float32
+		)
 	
 	def draw_input_overlay(self):
 
