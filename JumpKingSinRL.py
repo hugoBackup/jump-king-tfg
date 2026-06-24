@@ -214,7 +214,7 @@ class JumpKingSinRL(gym.Env):
 		# ==================================
 
 		if (
-			height_gain > 20
+			height_gain > 5
 		):
 
 			self.consecutive_good_jumps += 1

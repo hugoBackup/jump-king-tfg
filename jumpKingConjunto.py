@@ -192,7 +192,7 @@ class jumpKingConjunto(gym.Env):
 
 				self.best_distance = distance
 
-			if distance < 20:
+			if distance < 1:
 
 				reward = 100.0
 				terminated = True

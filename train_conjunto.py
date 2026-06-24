@@ -22,14 +22,14 @@ model = PPO(
 
 checkpoint_callback = CheckpointCallback(
     save_freq=1_000,
-    save_path="./checkpoint20",
-    name_prefix="conjunto20_"
+    save_path="./checkpoint20.1",
+    name_prefix="conjunto20.1_"
 )
 
 model.learn(
-    total_timesteps=500_000,
+    total_timesteps=200_000,
     callback=checkpoint_callback,
     reset_num_timesteps=False
 )
 
-model.save("jumpKingConj20")
+model.save("jumpKingConj20.1")

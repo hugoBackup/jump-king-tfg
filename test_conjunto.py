@@ -6,12 +6,8 @@ from stable_baselines3 import PPO
 from jumpKingConjunto import jumpKingConjunto
 
 MODEL_PATH = (
-	"checkpoint19.2/conjunto19.2__75000_steps.zip"
+	"checkpoint19.2/conjunto19.2__75000_steps"
 )
-
-LEVELS = [
-	19
-]
 
 env = jumpKingConjunto(
 	training_levels=[19]

@@ -432,7 +432,7 @@ class JKGame:
 
 			self.start.blitme()
 
-		self.draw_input_overlay()	
+		#self.draw_input_overlay()	
 		self.get_state()
 		self.draw_debug_rays()
 		self.menus.blitme()
