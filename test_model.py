@@ -28,6 +28,6 @@ while True:
     )
 
     if terminated or truncated:
-
-        obs, info = env.reset()
+        break
+        #obs, info = env.reset()
 

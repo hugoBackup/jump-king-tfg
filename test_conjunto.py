@@ -6,7 +6,7 @@ from stable_baselines3 import PPO
 from jumpKingConjunto import jumpKingConjunto
 
 MODEL_PATH = (
-	"checkpoint19.2/conjunto19.2__75000_steps"
+	"checkpoint19-izquierda/conjunto19__105000_steps"
 )
 
 env = jumpKingConjunto(
@@ -31,16 +31,7 @@ while True:
 		action
 	)
 
-	print(
-		"level=",
-		env.start_level,
-		"reward=",
-		reward,
-		"terminated=",
-		terminated,
-		"truncated=",
-		truncated
-	)
+	
 
 	if terminated or truncated:
 

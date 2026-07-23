@@ -3,9 +3,9 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 
 from jumpKingConjunto import jumpKingConjunto
 
-print("NIVELES 20")
+print("NIVELES 4")
 
-training_levels = [20]
+training_levels = [4]
 
 env = jumpKingConjunto(
     training_levels=training_levels
@@ -22,8 +22,8 @@ model = PPO(
 
 checkpoint_callback = CheckpointCallback(
     save_freq=1_000,
-    save_path="./checkpoint20.1",
-    name_prefix="conjunto20.1_"
+    save_path="./checkpoint4.1",
+    name_prefix="conjunto4.1"
 )
 
 model.learn(
@@ -32,4 +32,4 @@ model.learn(
     reset_num_timesteps=False
 )
 
-model.save("jumpKingConj20.1")
+model.save("jumpKingConj4.1")

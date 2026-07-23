@@ -51,7 +51,7 @@ class jumpKingConjunto(gym.Env):
 			13: (220, 200),
 			14: (150, 250),
 			18: (380, 250),
-			19: (310, 220),
+			19: (260, 220),
 			20: (250, 250),
 			42: (120, 250),
 		}
@@ -82,9 +82,14 @@ class jumpKingConjunto(gym.Env):
 
 	def reset(self, seed=None, options=None):
 
-		super().reset(seed=seed)
+		self.reset_lock = 20   # si el juego va a 60 FPS
+		
 
+		super().reset(seed=seed)
+		print("(///////////////////RESET/////////////////////")
 		self.current_step = 0
+
+		self.episode_reward = 0.0
 
 		self.game.reset()
 
@@ -125,7 +130,29 @@ class jumpKingConjunto(gym.Env):
 
 	def step(self, action):
 
+		if self.reset_lock > 0:
+			self.reset_lock -= 1
+
+			self.game.step(None)
+
+			return (
+				self.get_state(),
+				0.0,
+				False,
+				False,
+				{}
+			)
+
 		self.game.last_action = int(action)
+
+		old_level = self.game.king.levels.current_level
+
+		old_y = self.game.king.y
+
+		old_height = self.game.get_global_height(
+			old_level,
+			old_y
+		)
 
 		self.execute_action(action)
 
@@ -149,6 +176,8 @@ class jumpKingConjunto(gym.Env):
 			new_level,
 			self.game.king.y
 		)
+
+		height_gain = new_height - old_height
 
 		reward = -0.1
 
@@ -229,6 +258,23 @@ class jumpKingConjunto(gym.Env):
 
 			reward = -100.0
 			truncated = True
+
+		action_names = {
+			0: "J5L",
+			1: "J5R",
+			2: "J10L",
+			3: "J10R",
+			4: "J20L",
+			5: "J20R",
+			6: "J25L",
+			7: "J25R",
+			8: "J30L",
+			9: "J30R"
+		}
+
+		self.episode_reward += reward
+		
+		print(f"L{new_level} | "f"{action_names[int(action)]} | "f"height={new_height:.1f} | "f"gain={height_gain:.1f} | "f"best={self.best_height:.1f} | "f"reward={reward:.3f} | "f"total={self.episode_reward:.3f}")
 
 		return (
 			self.get_state(),

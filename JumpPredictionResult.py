@@ -18,3 +18,9 @@ class JumpPredictionResult:
 		self.hit_ceiling = False
 
 		self.wall_bounces = 0
+
+		self.landing_x = None
+		self.landing_y = None
+		self.landing_level = None
+
+		self.global_height = None
