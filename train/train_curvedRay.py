@@ -1,17 +1,24 @@
+
 import os
+import sys
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0, PROJECT_ROOT)
+import time
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
-
 
 from envs.jumpKingBaseEnv import JumpKingBaseEnv
 from agents.jumpKingAgentCurvedRay import jumpKingAgentCurvedRay
 
 
 
-os.environ["render"] = "1"
+os.environ["render"] = "0"
 
-env = jumpKingAgentCurvedRay()
+from envs.JumpkingcurvedRayEnv import JumpKingCurvedRayEnv
+
+env = JumpKingCurvedRayEnv()
 
 model = PPO(
     "MlpPolicy",
@@ -28,12 +35,17 @@ checkpoint_callback = CheckpointCallback(
     name_prefix="curvedRay"
 )
 
-model.learn(
-    total_timesteps=300_000,
-    callback=checkpoint_callback,
-    reset_num_timesteps=False
-)
 
-model.save(
-    "jumpKingCurvedRay"
-)
+MAX_TIME = 4 * 24 * 60 * 60
+
+start_time = time.time()
+
+while time.time() - start_time < MAX_TIME:
+
+    model.learn(
+        total_timesteps=10_000,
+        callback=checkpoint_callback,
+        reset_num_timesteps=False
+    )
+
+model.save("jumpKingCurvedRay_4days")

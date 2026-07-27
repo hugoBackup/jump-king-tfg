@@ -143,7 +143,7 @@ class JKGame:
 
 		state = np.array(self.get_state(), dtype=np.float32)
 
-		return state   # ← SOLO ESTO
+		return state  
 		
 	
 	def move_available(self):

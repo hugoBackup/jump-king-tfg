@@ -14,16 +14,17 @@ from JumpKing import JKGame
 
 game = JKGame()
 
+game.reset()
+
 agent = jumpKingTreeSearchAgent(game)
 
 game.agent = agent
 
 while True:
 
+    action = None
+
     if game.move_available():
+        action = agent.get_action()
 
-        action = agent.choose_action()
-
-        print(action)
-
-    game.step(None)
+    game.step(action)

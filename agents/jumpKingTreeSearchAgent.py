@@ -36,8 +36,11 @@ class jumpKingTreeSearchAgent:
 
 		self.game = game
 
-		self.search_depth = 2
-		self.max_branches = 10
+		self.current_action = None
+		self.action_frame = 0
+
+		self.search_depth = 3
+		self.max_branches = 6
 
 		self.jump_counts = [
 			5,
@@ -56,8 +59,6 @@ class jumpKingTreeSearchAgent:
 		pass
 
 	def get_state(self):
-
-		self.choose_action()
 
 		return np.zeros(1, dtype=np.float32)
 
@@ -435,37 +436,34 @@ class jumpKingTreeSearchAgent:
 		return children
 
 	def choose_action(self):
-	
-			x = self.game.king.rect.centerx
-			y = self.game.king.rect.bottom - 10
-	
-			root = SearchNode(
-				x=x,
-				y=y,
-				level=self.game.king.levels.current_level,
-				global_height=self.game.get_global_height(
-					self.game.king.levels.current_level,
-					y
-				)
+
+		x = self.game.king.rect.centerx
+		y = self.game.king.rect.bottom - 10
+
+		root = SearchNode(
+			x=x,
+			y=y,
+			level=self.game.king.levels.current_level,
+			global_height=self.game.get_global_height(
+				self.game.king.levels.current_level,
+				y
 			)
-	
-			self.search(
-				root,
-				self.search_depth
-			)
-	
-			
-	
-			best_leaf = self.get_best_leaf(root)
+		)
 
-			path = self.get_path(best_leaf)
+		self.search(
+			root,
+			self.search_depth
+		)
 
-			if len(path) == 0:
-				return
+		best_leaf = self.get_best_leaf(root)
 
-			action = path[0].action
+		path = self.get_path(best_leaf)
 
-			self.execute_action(action)
+		if len(path) == 0:
+			return
+
+		self.current_action = path[0].action
+		self.action_frame = 0
 
 	
 
@@ -544,16 +542,36 @@ class jumpKingTreeSearchAgent:
 
 		return path	
 
-	def execute_action(self, action):
+	def get_action(self):
+		
 
-		jump_count, direction = self.actions[action]
+		if self.current_action is None:
+			self.choose_action()
+
+		if self.current_action is None:
+			return None
+
+		jump_count, direction = self.actions[self.current_action]
 
 		hold_action = 3 if direction == "left" else 2
 		release_action = 1 if direction == "left" else 0
 
-		for _ in range(jump_count):
-			self.game.step(hold_action)
+		if self.action_frame < jump_count:
 
-		self.game.step(release_action)
+			self.action_frame += 1
+			return hold_action
+
+		elif self.action_frame == jump_count:
+
+			self.action_frame += 1
+			return release_action
+
+		else:
+
+			self.current_action = None
+			self.action_frame = 0
+			return None
+
+	
 
 		

@@ -10,7 +10,7 @@ class jumpKingAgentCurvedRay:
 
 	def __init__(self, game):
 
-		self.observation_size = 35
+		self.observation_size = 38
 
 		self.game = game
 
@@ -225,7 +225,7 @@ class jumpKingAgentCurvedRay:
 		has_bounced = False
 		has_hit_ceiling = False
 
-		for _ in range(max_steps):
+		for step in range(max_steps):
 
 			prev_y = y
 
@@ -270,23 +270,30 @@ class jumpKingAgentCurvedRay:
 			if (
 				collision_kind == "floor"
 				and vy < 0
+				and step < 5
 			):
 				collision_kind = "wall"
 
 			if collision_kind == "floor":
-				
 
 				result.collision_type = "floor"
 
 				surface_y = collision["surface_y"]
 
+				level_diff = collision["level"] - current_level
+				surface_y_local = surface_y - (level_diff * 360)
+
 				relative_height = (
-					origin_y - surface_y
+					origin_y - surface_y_local
 				) / 360.0
 
 				if relative_height > 0:
 
 					result.valid_floor = True
+
+					result.landing_x = x
+					result.landing_y = surface_y - 10
+					result.landing_level = collision["level"]
 
 					result.relative_height = min(
 						relative_height,
@@ -307,7 +314,6 @@ class jumpKingAgentCurvedRay:
 							"floor"
 						)
 					)
-				result.collision_type = "floor"
 
 				return result
 
@@ -333,6 +339,9 @@ class jumpKingAgentCurvedRay:
 
 			elif collision_kind == "wall":
 
+				if step < 2:
+					continue
+
 				if not has_bounced:
 					result.wall_bounces += 1
 
@@ -342,6 +351,8 @@ class jumpKingAgentCurvedRay:
 							(points.copy(), "wall")
 						)
 
+
+					
 					bounce = self.game.handle_wall_bounce(
 						x,
 						y,
