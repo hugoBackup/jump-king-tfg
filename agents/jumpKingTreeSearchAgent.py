@@ -1,5 +1,6 @@
 import os
 import math
+import csv
 
 import numpy as np
 
@@ -54,6 +55,23 @@ class jumpKingTreeSearchAgent:
 			"left",
 			"right"
 		]
+
+		self.jump_counter = 0
+
+		self.log_file = open(
+			"treeSearchLog.csv",
+			"w",
+			newline="",
+			encoding="utf-8"
+		)
+
+		self.writer = csv.writer(self.log_file)
+
+		self.writer.writerow([
+			"jump",
+			"height",
+			"level"
+		])
 
 	def reset(self):
 		pass
@@ -110,7 +128,6 @@ class jumpKingTreeSearchAgent:
 			max_steps=120,
 			gravity=0.27
 		):
-		
 		if (
 			not self.game.move_available()
 			and os.environ.get("render", "0") == "1"
@@ -130,7 +147,7 @@ class jumpKingTreeSearchAgent:
 		has_bounced = False
 		has_hit_ceiling = False
 
-		for _ in range(max_steps):
+		for step in range(max_steps):
 
 			prev_y = y
 
@@ -181,7 +198,9 @@ class jumpKingTreeSearchAgent:
 			if (
 				collision_kind == "floor"
 				and vy < 0
+				and step < 5
 			):
+
 				collision_kind = "wall"
 
 			if collision_kind == "floor":
@@ -258,6 +277,11 @@ class jumpKingTreeSearchAgent:
 				continue
 
 			elif collision_kind == "wall":
+
+				if step < 2:
+					continue
+
+				
 
 				if not has_bounced:
 					result.wall_bounces += 1
@@ -465,6 +489,23 @@ class jumpKingTreeSearchAgent:
 		self.current_action = path[0].action
 		self.action_frame = 0
 
+		self.jump_counter += 1
+
+		height = self.game.get_global_height(
+			self.game.king.levels.current_level,
+			self.game.king.y
+		)
+
+		self.writer.writerow([
+			self.jump_counter,
+			height,
+			self.game.king.levels.current_level,
+			path[0].jump_power,
+			path[0].direction
+		])
+
+		self.log_file.flush()
+
 	
 
 	def search(
@@ -572,6 +613,10 @@ class jumpKingTreeSearchAgent:
 			self.action_frame = 0
 			return None
 
+
+def close(self):
+
+    self.log_file.close()
 	
 
 		

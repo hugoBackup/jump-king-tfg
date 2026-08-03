@@ -16,6 +16,7 @@ game = JKGame()
 
 game.reset()
 
+
 agent = jumpKingTreeSearchAgent(game)
 
 game.agent = agent

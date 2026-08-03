@@ -25,8 +25,8 @@ model = PPO(
 
 checkpoint_callback = CheckpointCallback(
     save_freq=10_000,
-    save_path="./checkpointStraightRay",
-    name_prefix="straightRay"
+    save_path="./checkpointStraightRay100",
+    name_prefix="straightRay100"
 )
 
 MAX_TIME = 4 * 24 * 60 * 60  # 4 días
@@ -41,4 +41,4 @@ while time.time() - start_time < MAX_TIME:
         reset_num_timesteps=False
     )
 
-model.save("jumpKingStraightRay_4days")
+model.save("jumpKingStraightRay100_4days")

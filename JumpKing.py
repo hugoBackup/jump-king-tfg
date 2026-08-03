@@ -270,10 +270,6 @@ class JKGame:
 
 		self.game_screen.fill(self.bg_color)
 
-		self.debug_rays = []
-
-		self.debug_ground_rays = []
-
 		
 
 		if os.environ["gaming"]:
@@ -470,6 +466,9 @@ class JKGame:
 						3
 					)
 		scale = int(os.environ.get("window_scale"))
+
+		self.debug_rays = []
+		self.debug_ground_rays = []
 
 		self.screen.blit(
 			pygame.transform.scale(

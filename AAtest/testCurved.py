@@ -13,7 +13,7 @@ os.environ["render"] = "1"
 env = JumpKingCurvedRayEnv()
 
 model = PPO.load(
-    "checkpointCurvedRay/curvedRay_920000_steps",
+    "checkpointCurvedRay/curvedRay_1090000_steps",
     env=env
 )
 

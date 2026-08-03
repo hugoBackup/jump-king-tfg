@@ -31,8 +31,8 @@ model = PPO(
 
 checkpoint_callback = CheckpointCallback(
     save_freq=10_000,
-    save_path="./checkpointCurvedRay",
-    name_prefix="curvedRay"
+    save_path="./checkpointCurvedRay100",
+    name_prefix="curvedRay100"
 )
 
 
@@ -48,4 +48,4 @@ while time.time() - start_time < MAX_TIME:
         reset_num_timesteps=False
     )
 
-model.save("jumpKingCurvedRay_4days")
+model.save("jumpKingCurvedRay100_4days")
