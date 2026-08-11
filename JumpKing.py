@@ -110,6 +110,7 @@ class JKGame:
 			0.0,
 			0.0
 		]
+		self.debug_ray_timer = 0.0
 
 
 		pygame.display.set_caption('Pot la IA esdevenir el Jump King ? ')
@@ -557,6 +558,7 @@ class JKGame:
 			2,
 			20
 		)
+
 	
 	def classify_collision(
 			
@@ -686,6 +688,9 @@ class JKGame:
 				}
 
 		return None
+
+
+	
 		
 	def evaluate_jump(
 		self,
@@ -1233,27 +1238,27 @@ class JKGame:
 				3
 			)
 
-		for points, sensor_name in self.debug_ground_rays:
+		# for points, sensor_name in self.debug_ground_rays:
 
-			if len(points) < 2:
-				continue
+		# 	if len(points) < 2:
+		# 		continue
 
-			if sensor_name == "left":
+		# 	if sensor_name == "left":
 
-				color = (255, 0, 0)
+		# 		color = (255, 0, 0)
 
-			elif sensor_name == "center":
+		# 	elif sensor_name == "center":
 
-				color = (0, 255, 0)
+		# 		color = (0, 255, 0)
 
-			else:
+		# 	else:
 
-				color = (0, 150, 255)
+		# 		color = (0, 150, 255)
 
-			pygame.draw.lines(
-				self.game_screen,
-				color,
-				False,
-				[(int(px), int(py)) for px, py in points],
-				2
-			)	
+		# 	pygame.draw.lines(
+		# 		self.game_screen,
+		# 		color,
+		# 		False,
+		# 		[(int(px), int(py)) for px, py in points],
+		# 		2
+		# 	)	

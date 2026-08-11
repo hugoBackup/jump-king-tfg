@@ -21,7 +21,7 @@ class TrainingLogger:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
         self.csv_path = (
-            f"logs/{agent_name}_{timestamp}DQN.csv"
+            f"logs/fullinfo/punishFull/{agent_name}_{timestamp}DQN.csv"
         )
 
         self.file = open(

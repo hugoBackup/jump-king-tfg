@@ -19,7 +19,7 @@ class JumpKingBaseEnv(gym.Env):
 		
 
 		self.game = JKGame(
-			max_step=1000
+			max_step=100
 		)
 		self.agent = agent_class(self.game)
 		self.action_space = spaces.Discrete(10)
@@ -250,7 +250,7 @@ class JumpKingBaseEnv(gym.Env):
 		terminated = False
 
 		truncated = (
-			self.current_step >= 1000
+			self.current_step >= 100
 		)
 
 		action_names = {

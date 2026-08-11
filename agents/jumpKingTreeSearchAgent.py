@@ -1,6 +1,7 @@
 import os
 import math
 import csv
+import time
 
 import numpy as np
 
@@ -418,6 +419,8 @@ class jumpKingTreeSearchAgent:
 
 	def expand_node(self, node):
 
+		
+
 		children = []
 
 		for action, (jump_count, direction) in enumerate(self.actions):
@@ -476,7 +479,8 @@ class jumpKingTreeSearchAgent:
 
 		self.search(
 			root,
-			self.search_depth
+			self.search_depth,
+			debug=True
 		)
 
 		best_leaf = self.get_best_leaf(root)
@@ -511,7 +515,8 @@ class jumpKingTreeSearchAgent:
 	def search(
 		self,
 		node,
-		depth
+		depth,
+		debug=False
 	):
 
 		if depth == 0:
@@ -541,7 +546,8 @@ class jumpKingTreeSearchAgent:
 
 			self.search(
 				child,
-				depth - 1
+				depth - 1,
+				debug=False
 			)
 
 	def get_best_leaf(self, node):
@@ -612,11 +618,3 @@ class jumpKingTreeSearchAgent:
 			self.current_action = None
 			self.action_frame = 0
 			return None
-
-
-def close(self):
-
-    self.log_file.close()
-	
-
-		

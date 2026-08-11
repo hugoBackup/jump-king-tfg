@@ -10,9 +10,23 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 
 from envs.jumpKingStraightRayEnv import JumpKingStraightRayEnv
 
+from Logs.training_metrics_logger import TrainingMetricsLogger
+from callbacks.training_metrics_callback import TrainingMetricsCallback
+
+
 os.environ["render"] = "0"
+type = "punish"
+
+# ============================================================
+# ENTORNO
+# ============================================================
 
 env = JumpKingStraightRayEnv()
+
+
+# ============================================================
+# MODELO DQN
+# ============================================================
 
 model = DQN(
     "MlpPolicy",
@@ -29,22 +43,65 @@ model = DQN(
     exploration_final_eps=0.05
 )
 
+
+# ============================================================
+# LOGGER DE MÉTRICAS DE DQN
+# ============================================================
+
+metrics_logger = TrainingMetricsLogger(
+    agent_name="jumpKingAgentStraightRay",
+    algorithm="DQN"
+)
+
+metrics_callback = TrainingMetricsCallback(
+    metrics_logger
+)
+
+
+# ============================================================
+# CHECKPOINTS
+# ============================================================
+
 checkpoint_callback = CheckpointCallback(
     save_freq=10_000,
-    save_path="./checkpointStraightRay100DQN",
-    name_prefix="straightRay100DQN"
+    save_path=f"./checkpointStraightRay{type}DQN",
+    name_prefix=f"straightRay{type}DQN"
 )
+
+
+# ============================================================
+# ENTRENAMIENTO
+# ============================================================
 
 MAX_TIME = 4 * 24 * 60 * 60  # 4 días
 
 start_time = time.time()
 
+
 while time.time() - start_time < MAX_TIME:
 
     model.learn(
         total_timesteps=10_000,
-        callback=checkpoint_callback,
+        callback=[
+            checkpoint_callback,
+            metrics_callback
+        ],
         reset_num_timesteps=False
     )
 
-model.save("jumpKingStraightRay100DQN_4days")
+
+# ============================================================
+# GUARDADO FINAL
+# ============================================================
+
+model.save(
+    f"jumpKingStraightRay{type}DQN_4days"
+)
+
+
+# ============================================================
+# CERRAR LOGGERS
+# ============================================================
+
+metrics_logger.close()
+env.close()
