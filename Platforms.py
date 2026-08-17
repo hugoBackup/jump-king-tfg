@@ -40,7 +40,8 @@ class Rectangles:
 							(208, 305, 48, 13, 0, 0, False, False),
 							(321, 306, 56, 14, 0, 0, False, False),
 							(0, 0, 8, 360, 0, 0, False, False),
-							(472, 0, 8, 360, 0, 0, False, False)]
+							(472, 0, 8, 360, 0, 0, False, False)
+							]
 
 		self.levels[3]	=	[(137, 89, 40, 79, 0, 0, False, False),
 							(137, -4, 15, 93, 0, 0, False, False),
@@ -54,6 +55,21 @@ class Rectangles:
 							(137, 321, 71, 39, 0, 0, False, False),
 							(0, 0, 8, 360, 0, 0, False, False),
 							(472, 0, 8, 360, 0, 0, False, False)]
+
+		# self.levels[3] = [
+		# 					(137, 89, 40, 79, 0, 0, False, False),
+		# 					(137, -4, 15, 93, 0, 0, False, False),
+		# 					(-5, 216, 69, 16, 0, 0, False, False),
+		# 					(137, 217, 192, 16, 0, 0, False, False),
+		# 					(329, 0, 17, 16, 0, 0, False, False),
+		# 					(329, 73, 17, 88, 0, 0, False, False),
+		# 					(297, 161, 49, 71, 0, 0, False, False),
+		# 					(345, 73, 55, 16, 0, 0, False, False),
+		# 					(434, 129, 46, 15, 0, 0, False, False),
+		# 					(137, 321, 71, 39, 0, 0, False, False),
+		# 					(0, 0, 8, 360, 0, 0, False, False),
+		# 					(472, 0, 8, 360, 0, 0, False, False)
+		# 				]	 por si quiero probar a añadir el suelo 				
 
 		self.levels[4]	=	[(40, 88, 31, 15, 0, 0, False, False),
 							(160, 57, 32, 14, 0, 0, False, False),

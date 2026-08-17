@@ -1,0 +1,6 @@
+agent,algorithm,observation,reward_function,episode,total_reward,max_height,max_level,actions_to_max_height
+PPO_straight_BASE,PPO,StraightRays,BASE,1,-74.17,448,2,9
+PPO_straight_BASE,PPO,StraightRays,BASE,2,-76.74999999999999,448,2,9
+PPO_straight_BASE,PPO,StraightRays,BASE,3,-76.74999999999999,448,2,9
+PPO_straight_BASE,PPO,StraightRays,BASE,4,-80.71999999999998,448,2,9
+PPO_straight_BASE,PPO,StraightRays,BASE,5,-71.8,448,2,19

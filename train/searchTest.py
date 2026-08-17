@@ -33,12 +33,5 @@ while True:
             game.king.levels.current_level,
             game.king.y
         )
-
-        print(
-            "Acción:",
-            action,
-            "| Altura global antes del salto:",
-            height
-        )
-
+        
     game.step(action)

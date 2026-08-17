@@ -1,0 +1,6 @@
+agent,algorithm,observation,reward_function,episode,total_reward,max_height,max_level,actions_to_max_height
+PPO_curved_Punish,PPO,CurvedRays,Punish,1,-72.88000000000002,448,2,70
+PPO_curved_Punish,PPO,CurvedRays,Punish,2,-89.91000000000001,448,2,22
+PPO_curved_Punish,PPO,CurvedRays,Punish,3,-100.46999999999998,313,1,15
+PPO_curved_Punish,PPO,CurvedRays,Punish,4,-79.89999999999998,290,1,31
+PPO_curved_Punish,PPO,CurvedRays,Punish,5,-84.10000000000004,290,1,23

@@ -9,25 +9,38 @@ from SearchNode import SearchNode
 from JumpKing import JumpPredictionResult
 from JumpKing import JKGame
 
-class jumpKingTreeSearchAgent:
+class jumpKingTreeSearchAgentPlus:
 
 	def __init__(self, game):
 
 		self.actions = [
 			(5, "left"),
 			(5, "right"),
-			(8, "left"),
-            (8, "right"),
+
 			(10, "left"),
 			(10, "right"),
-			(14, "left"),
-            (14, "right"),
-			(20, "left"),
-			(20, "right"),
+
+			(17, "left"),
+			(17, "right"),
+
+			(19, "left"),
+			(19, "right"),
+
+			(21, "left"),
+			(21, "right"),
+
+			(23, "left"),
+			(23, "right"),
+
 			(25, "left"),
 			(25, "right"),
+
+			(27, "left"),
+			(27, "right"),
+
 			(28, "left"),
-            (28, "right"),
+			(28, "right"),
+
 			(30, "left"),
 			(30, "right")
 		]
@@ -35,31 +48,34 @@ class jumpKingTreeSearchAgent:
 		#1 -> 5R
 		#2 -> 10L
 		#3 -> 10R
-		#4 -> 15L
-		#5 -> 15R
-		#6 -> 20L
-		#7 -> 20R
-		#8 -> 25L
-		#9 -> 25R
-		#10 -> 30L
-		#11 -> 30R
+		#4 -> 20L
+		#5 -> 20R
+		#6 -> 25L
+		#7 -> 25R
+		#8 -> 30L
+		#9 -> 30R
 
 		self.game = game
 
 		self.current_action = None
 		self.action_frame = 0
 
-		self.search_depth = 3
+		self.search_depth = 2
 		self.max_branches = 8
+
+		self.tree_debug_rays = []
+		self.show_tree = False
 
 		self.jump_counts = [
 			5,
 			7,
 			10,
-			15,
+			13,
+			17,
 			20,
 			25,
 			27,
+			29,
 			30
 		]
 
@@ -141,7 +157,7 @@ class jumpKingTreeSearchAgent:
 			gravity=0.27
 		):
 		if (
-			not self.game.move_available()
+			not self.game.tree_move_available()
 			and os.environ.get("render", "0") == "1"
 		):
 			return JumpPredictionResult()
@@ -180,8 +196,8 @@ class jumpKingTreeSearchAgent:
 
 				if os.environ.get("render", "0") == "1":
 
-					self.game.debug_rays.append(
-						(points, "none")
+					self.tree_debug_rays.append(
+						(points.copy(), "none")
 					)
 
 				return  result
@@ -258,9 +274,9 @@ class jumpKingTreeSearchAgent:
 
 				if os.environ.get("render", "0") == "1":
 
-					self.game.debug_rays.append(
+					self.tree_debug_rays.append(
 						(
-							points,
+							points.copy(),
 							"floor"
 						)
 					)
@@ -274,7 +290,7 @@ class jumpKingTreeSearchAgent:
 
 					if os.environ.get("render", "0") == "1":
 
-						self.game.debug_rays.append(
+						self.tree_debug_rays.append(
 							(points.copy(), "ceiling")
 						)
 
@@ -300,7 +316,7 @@ class jumpKingTreeSearchAgent:
 
 					if os.environ.get("render", "0") == "1":
 
-						self.game.debug_rays.append(
+						self.tree_debug_rays.append(
 							(points.copy(), "wall")
 						)
 
@@ -330,7 +346,7 @@ class jumpKingTreeSearchAgent:
 
 					if os.environ.get("render", "0") == "1":
 
-						self.game.debug_rays.append(
+						self.tree_debug_rays.append(
 							(points.copy(), "wall")
 						)
 
@@ -338,8 +354,8 @@ class jumpKingTreeSearchAgent:
 
 		if os.environ.get("render", "0") == "1":
 
-			self.game.debug_rays.append(
-				(points, "none")
+			self.tree_debug_rays.append(
+				(points.copy(), "none")
 			)
 
 		return result
@@ -430,11 +446,7 @@ class jumpKingTreeSearchAgent:
 
 	def expand_node(self, node):
 
-		print(
-			"NODE:",
-			node.x,
-			node.y
-		)
+		
 
 		children = []
 
@@ -478,6 +490,8 @@ class jumpKingTreeSearchAgent:
 		return children
 
 	def choose_action(self):
+
+		self.tree_debug_rays.clear()
 
 		x = self.game.king.rect.centerx
 		y = self.game.king.rect.bottom - 10
@@ -605,12 +619,12 @@ class jumpKingTreeSearchAgent:
 		return path	
 
 	def get_action(self):
-		
 
 		if self.current_action is None:
 			self.choose_action()
 
 		if self.current_action is None:
+			self.show_tree = False
 			return None
 
 		jump_count, direction = self.actions[self.current_action]
@@ -618,18 +632,43 @@ class jumpKingTreeSearchAgent:
 		hold_action = 3 if direction == "left" else 2
 		release_action = 1 if direction == "left" else 0
 
+		# ==========================================
+		# FASE DE CARGA
+		# ==========================================
 		if self.action_frame < jump_count:
 
+			# Mientras se carga el salto,
+			# mostramos el árbol que acaba de calcularse.
+			self.show_tree = True
+
 			self.action_frame += 1
+
 			return hold_action
 
+		# ==========================================
+		# LIBERACIÓN DEL SALTO
+		# ==========================================
 		elif self.action_frame == jump_count:
 
+			# El salto comienza.
+			# Dejamos de mostrar el árbol.
+			self.show_tree = False
+
 			self.action_frame += 1
+
 			return release_action
 
+		# ==========================================
+		# FIN DE LA ACCIÓN
+		# ==========================================
 		else:
 
 			self.current_action = None
 			self.action_frame = 0
+
 			return None
+
+
+		
+
+

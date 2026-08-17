@@ -15,7 +15,7 @@ from callbacks.training_metrics_callback import TrainingMetricsCallback
 
 
 os.environ["render"] = "0"
-type = "punish"
+type = "Kiss"
 
 
 # ============================================================
@@ -62,8 +62,8 @@ metrics_callback = TrainingMetricsCallback(
 
 checkpoint_callback = CheckpointCallback(
     save_freq=10_000,
-    save_path=f"./checkpointCurvedRay{type}DQN",
-    name_prefix=f"curvedRay{type}DQN"
+    save_path=f"./checkpointCurvedRay{type}DQNFinal",
+    name_prefix=f"curvedRay{type}DQNFinal"
 )
 
 
@@ -93,7 +93,7 @@ while time.time() - start_time < MAX_TIME:
 # ============================================================
 
 model.save(
-    f"jumpKingCurvedRay{type}DQN_4days"
+    f"jumpKingCurvedRay{type}DQN_4daysFinal"
 )
 
 

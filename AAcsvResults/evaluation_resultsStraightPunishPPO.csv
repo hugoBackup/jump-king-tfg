@@ -1,0 +1,11 @@
+agent,algorithm,observation,reward_function,episode,total_reward,max_height,max_level,actions_to_max_height
+PPO_straight_punish,PPO,StraightRays,punish,1,5.90000000000002,196,1,16
+PPO_straight_punish,PPO,StraightRays,punish,2,5.90000000000002,196,1,16
+PPO_straight_punish,PPO,StraightRays,punish,3,5.90000000000002,196,1,16
+PPO_straight_punish,PPO,StraightRays,punish,4,5.90000000000002,196,1,16
+PPO_straight_punish,PPO,StraightRays,punish,5,5.90000000000002,196,1,16
+PPO_straight_punish,PPO,StraightRays,punish,1,5.90000000000002,196,1,16
+PPO_straight_punish,PPO,StraightRays,punish,2,5.90000000000002,196,1,16
+PPO_straight_punish,PPO,StraightRays,punish,3,5.90000000000002,196,1,16
+PPO_straight_punish,PPO,StraightRays,punish,4,5.90000000000002,196,1,16
+PPO_straight_punish,PPO,StraightRays,punish,5,5.90000000000002,196,1,16

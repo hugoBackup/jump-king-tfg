@@ -1,0 +1,6 @@
+agent,algorithm,observation,reward_function,episode,total_reward,max_height,max_level,actions_to_max_height
+DQN_straight_base,DQN,StraightRays,base,1,-129.65,97,1,5
+DQN_straight_base,DQN,StraightRays,base,2,-95.8,313,1,44
+DQN_straight_base,DQN,StraightRays,base,3,-129.65,97,1,5
+DQN_straight_base,DQN,StraightRays,base,4,-123.20000000000002,97,1,5
+DQN_straight_base,DQN,StraightRays,base,5,-99.52000000000001,313,1,67

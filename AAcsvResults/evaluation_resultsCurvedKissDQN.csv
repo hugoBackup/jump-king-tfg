@@ -1,0 +1,6 @@
+agent,algorithm,observation,reward_function,episode,total_reward,max_height,max_level,actions_to_max_height
+DQN_curved_kiss,DQN,CurvedRays,Kiss,1,-35.4,-152,0,2
+DQN_curved_kiss,DQN,CurvedRays,Kiss,2,-35.4,-152,0,3
+DQN_curved_kiss,DQN,CurvedRays,Kiss,3,-35.4,-152,0,6
+DQN_curved_kiss,DQN,CurvedRays,Kiss,4,-35.4,-152,0,2
+DQN_curved_kiss,DQN,CurvedRays,Kiss,5,-35.4,-152,0,2

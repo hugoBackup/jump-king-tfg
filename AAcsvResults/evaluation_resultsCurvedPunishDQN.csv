@@ -1,0 +1,6 @@
+agent,algorithm,observation,reward_function,episode,total_reward,max_height,max_level,actions_to_max_height
+DQN_curved_Punish,DQN,CurvedRays,Punish,1,-60.57,196,1,9
+DQN_curved_Punish,DQN,CurvedRays,Punish,2,-64.52,196,1,9
+DQN_curved_Punish,DQN,CurvedRays,Punish,3,-54.57,196,1,9
+DQN_curved_Punish,DQN,CurvedRays,Punish,4,-58.43000000000001,196,1,14
+DQN_curved_Punish,DQN,CurvedRays,Punish,5,-60.42,196,1,9

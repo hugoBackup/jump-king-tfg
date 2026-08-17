@@ -17,7 +17,7 @@ class TrainingMetricsLogger:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
         self.csv_path = (
-            f"logs/fullinfo/punishFull/{agent_name}_{algorithm}_training_{timestamp}.csv"
+            f"logs/fullinfo/kissFullFinal/{agent_name}_{algorithm}_training_{timestamp}.csv"
         )
 
         self.file = open(

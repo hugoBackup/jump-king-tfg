@@ -103,6 +103,7 @@ class JKGame:
 
 		self.visited = {}
 		self.debug_rays = []
+		self.straight_debug_rays = []
 		self.debug_ground_rays = []
 		self.cached_jump_state = [
 			0.0,
@@ -158,6 +159,22 @@ class JKGame:
 			return False
 
 		# si el juego terminó
+		if self.king.levels.ending:
+			return False
+
+		return True
+
+	def tree_move_available(self):
+
+		# No puede actuar en el aire
+		if self.king.isFalling:
+			return False
+
+		# No puede actuar durante la animación de caída
+		if self.king.isSplat and self.king.splatCount <= self.king.splatDuration:
+			return False
+
+		# Si el juego terminó
 		if self.king.levels.ending:
 			return False
 
@@ -267,7 +284,7 @@ class JKGame:
 
 	def _update_gamescreen(self):
 
-		pygame.display.set_caption(f"Jump King At Home XD - {self.clock.get_fps():.2f} FPS")
+		pygame.display.set_caption(f"JumpKing Hugo Valls TFG - {self.clock.get_fps():.2f} FPS")
 
 		self.game_screen.fill(self.bg_color)
 
@@ -303,6 +320,7 @@ class JKGame:
 		if hasattr(self, "agent"):
 			self.agent.get_state()
 		self.draw_debug_rays()
+		self.draw_tree_debug_rays()
 		self.menus.blitme()
 
 		# ==========================================
@@ -358,117 +376,37 @@ class JKGame:
 			# CONTINUACIÓN REAL DE LOS RAYOS
 			# ==========================================
 
-			for points, collision_type in self.debug_rays:
+			# ==========================================
+			# CONTINUACIÓN REAL DE LOS RAYOS
+			# ==========================================
 
-				visible_segments = []
-				current_segment = []
+			# Rayos utilizados por el sistema original.
+			# Se mantienen exactamente igual para otros agentes.
+			self.draw_preview_rays(
+				self.debug_rays,
+				scale
+			)
 
-				for px, py in points:
+			# ==========================================
+			# RAYOS DEL TREE SEARCH
+			# ==========================================
 
-					if -160 <= py <= 0:
-						PREVIEW_DRAW_OFFSET = 15
+			# Solo se dibujan si el agente actual utiliza
+			# el sistema de rayos del árbol y está en fase
+			# de carga del salto.
+			if (
+				hasattr(self, "agent")
+				and hasattr(self.agent, "tree_debug_rays")
+				and getattr(self.agent, "show_tree", False)
+			):
 
-
-						current_segment.append(
-							(
-								int(px * scale),
-								int((py + 160 + PREVIEW_DRAW_OFFSET) * scale)		
-							)
-						)
-						
-
-					else:
-
-						if len(current_segment) >= 2:
-							visible_segments.append(
-								current_segment
-							)
-
-						current_segment = []
-
-				if len(current_segment) >= 2:
-
-					visible_segments.append(
-						current_segment
-					)
-
-				# ==========================
-				# DIBUJAR SEGMENTOS VISIBLES
-				# ==========================
-
-				for segment in visible_segments:
-
-					pygame.draw.lines(
-						self.screen,
-						(0, 255, 0),
-						False,
-						segment,
-						2
-					)
-
-				# ==========================
-				# CRUZ FINAL
-				# ==========================
-
-				real_end_x, real_end_y = points[-1]
-
-				if -160 <= real_end_y <= 0:
-
-					end_x = int(real_end_x * scale)
-					PREVIEW_DRAW_OFFSET = 15
-
-					end_y = int(
-						(real_end_y + 160 + PREVIEW_DRAW_OFFSET)
-						* scale
-					)
-
-					size = 5
-
-					if collision_type == "wall":
-						color = (0, 100, 255)
-
-					elif collision_type == "floor":
-						color = (150, 150, 150)
-
-					elif collision_type == "ceiling":
-						color = (255, 0, 0)
-
-					else:
-						color = (255, 255, 255)
-
-					pygame.draw.line(
-						self.screen,
-						color,
-						(end_x - size, end_y - size),
-						(end_x + size, end_y + size),
-						2
-					)
-
-					pygame.draw.line(
-						self.screen,
-						color,
-						(end_x - size, end_y + size),
-						(end_x + size, end_y - size),
-						2
-					)
-
-				# ==========================
-				# PUNTO ORIGEN
-				# ==========================
-
-				if len(visible_segments) > 0:
-
-					start_x, start_y = visible_segments[0][0]
-
-					pygame.draw.circle(
-						self.screen,
-						(0, 150, 255),
-						(start_x, start_y),
-						3
-					)
+				self.draw_preview_rays(
+					self.agent.tree_debug_rays,
+					scale
+				)
 		scale = int(os.environ.get("window_scale"))
-
 		self.debug_rays = []
+		self.straight_debug_rays = []
 		self.debug_ground_rays = []
 
 		self.screen.blit(
@@ -1173,7 +1111,7 @@ class JKGame:
 		draw_key("→", x + 100, y + 50, right)
 	
 	def draw_debug_rays(self):
-
+		
 		for points, collision_type in self.debug_rays:
 
 
@@ -1262,3 +1200,183 @@ class JKGame:
 		# 		[(int(px), int(py)) for px, py in points],
 		# 		2
 		# 	)	
+
+
+
+	def draw_tree_debug_rays(self):
+
+		# Este agente no utiliza rayos del árbol
+		if not hasattr(self, "agent"):
+			return
+
+		if not hasattr(self.agent, "tree_debug_rays"):
+			return
+
+		if not getattr(self.agent, "show_tree", False):
+			return
+
+		for points, collision_type in self.agent.tree_debug_rays:
+
+			if len(points) < 2:
+				continue
+
+			int_points = [
+				(int(px), int(py))
+				for px, py in points
+			]
+
+			pygame.draw.lines(
+				self.game_screen,
+				(0, 255, 0),
+				False,
+				int_points,
+				2
+			)
+
+			end_x, end_y = int_points[-1]
+
+			size = 5
+
+			if collision_type == "wall":
+				color = (0, 100, 255)
+
+			elif collision_type == "floor":
+				color = (150, 150, 150)
+
+			elif collision_type == "ceiling":
+				color = (255, 0, 0)
+
+			else:
+				color = (255, 255, 255)
+
+			pygame.draw.line(
+				self.game_screen,
+				color,
+				(end_x - size, end_y - size),
+				(end_x + size, end_y + size),
+				2
+			)
+
+			pygame.draw.line(
+				self.game_screen,
+				color,
+				(end_x - size, end_y + size),
+				(end_x + size, end_y - size),
+				2
+			)
+
+
+	def draw_preview_rays(self, rays, scale):
+
+		for points, collision_type in rays:
+
+			visible_segments = []
+			current_segment = []
+
+			for px, py in points:
+
+				if -160 <= py <= 0:
+
+					PREVIEW_DRAW_OFFSET = 15
+
+					current_segment.append(
+						(
+							int(px * scale),
+							int(
+								(py + 160 + PREVIEW_DRAW_OFFSET)
+								* scale
+							)
+						)
+					)
+
+				else:
+
+					if len(current_segment) >= 2:
+						visible_segments.append(
+							current_segment
+						)
+
+					current_segment = []
+
+			if len(current_segment) >= 2:
+				visible_segments.append(
+					current_segment
+				)
+
+			# ==========================
+			# DIBUJAR SEGMENTOS VISIBLES
+			# ==========================
+
+			for segment in visible_segments:
+
+				pygame.draw.lines(
+					self.screen,
+					(0, 255, 0),
+					False,
+					segment,
+					2
+				)
+
+			# ==========================
+			# CRUZ FINAL
+			# ==========================
+
+			real_end_x, real_end_y = points[-1]
+
+			if -160 <= real_end_y <= 0:
+
+				end_x = int(real_end_x * scale)
+
+				PREVIEW_DRAW_OFFSET = 15
+
+				end_y = int(
+					(real_end_y + 160 + PREVIEW_DRAW_OFFSET)
+					* scale
+				)
+
+				size = 5
+
+				if collision_type == "wall":
+					color = (0, 100, 255)
+
+				elif collision_type == "floor":
+					color = (150, 150, 150)
+
+				elif collision_type == "ceiling":
+					color = (255, 0, 0)
+
+				else:
+					color = (255, 255, 255)
+
+				pygame.draw.line(
+					self.screen,
+					color,
+					(end_x - size, end_y - size),
+					(end_x + size, end_y + size),
+					2
+				)
+
+				pygame.draw.line(
+					self.screen,
+					color,
+					(end_x - size, end_y + size),
+					(end_x + size, end_y - size),
+					2
+				)
+
+			# ==========================
+			# PUNTO ORIGEN
+			# ==========================
+
+			if len(visible_segments) > 0:
+
+				start_x, start_y = visible_segments[0][0]
+
+				pygame.draw.circle(
+					self.screen,
+					(0, 150, 255),
+					(start_x, start_y),
+					3
+				)
+
+

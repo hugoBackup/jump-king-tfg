@@ -31,8 +31,6 @@ class JumpKingAgentStraightRay:
 			10
 		]
 
-		# 16 rayos × (hit + distancia)
-		# + 3 ground rays
 
 		self.observation_size = 35
 
@@ -128,7 +126,7 @@ class JumpKingAgentStraightRay:
 
 				if os.environ.get("render", "0") == "1":
 
-					self.game.debug_rays.append(
+					self.game.straight_debug_rays.append(
 						(points.copy(), "ceiling")
 					)
 
@@ -141,7 +139,7 @@ class JumpKingAgentStraightRay:
 
 				if os.environ.get("render", "0") == "1":
 
-					self.game.debug_rays.append(
+					self.game.straight_debug_rays.append(
 						(points.copy(), "wall")
 					)
 
@@ -152,7 +150,7 @@ class JumpKingAgentStraightRay:
 
 		if os.environ.get("render", "0") == "1":
 
-			self.game.debug_rays.append(
+			self.game.straight_debug_rays.append(
 				(points.copy(), "none")
 			)
 

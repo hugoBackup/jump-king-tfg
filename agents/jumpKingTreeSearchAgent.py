@@ -39,10 +39,14 @@ class jumpKingTreeSearchAgent:
 		self.game = game
 
 		self.current_action = None
+		self.current_jump_power = None
 		self.action_frame = 0
 
 		self.search_depth = 3
 		self.max_branches = 6
+
+		self.tree_debug_rays = []
+		self.show_tree = False
 
 		self.jump_counts = [
 			5,
@@ -130,7 +134,7 @@ class jumpKingTreeSearchAgent:
 			gravity=0.27
 		):
 		if (
-			not self.game.move_available()
+			not self.game.tree_move_available()
 			and os.environ.get("render", "0") == "1"
 		):
 			return JumpPredictionResult()
@@ -169,8 +173,8 @@ class jumpKingTreeSearchAgent:
 
 				if os.environ.get("render", "0") == "1":
 
-					self.game.debug_rays.append(
-						(points, "none")
+					self.tree_debug_rays.append(
+						(points.copy(), "none")
 					)
 
 				return  result
@@ -205,6 +209,12 @@ class jumpKingTreeSearchAgent:
 				collision_kind = "wall"
 
 			if collision_kind == "floor":
+
+				if self.is_transition_false_floor(
+					collision,
+					current_level
+				):
+					continue
 				
 
 				result.collision_type = "floor"
@@ -247,9 +257,9 @@ class jumpKingTreeSearchAgent:
 
 				if os.environ.get("render", "0") == "1":
 
-					self.game.debug_rays.append(
+					self.tree_debug_rays.append(
 						(
-							points,
+							points.copy(),
 							"floor"
 						)
 					)
@@ -263,7 +273,7 @@ class jumpKingTreeSearchAgent:
 
 					if os.environ.get("render", "0") == "1":
 
-						self.game.debug_rays.append(
+						self.tree_debug_rays.append(
 							(points.copy(), "ceiling")
 						)
 
@@ -289,7 +299,7 @@ class jumpKingTreeSearchAgent:
 
 					if os.environ.get("render", "0") == "1":
 
-						self.game.debug_rays.append(
+						self.tree_debug_rays.append(
 							(points.copy(), "wall")
 						)
 
@@ -319,7 +329,7 @@ class jumpKingTreeSearchAgent:
 
 					if os.environ.get("render", "0") == "1":
 
-						self.game.debug_rays.append(
+						self.tree_debug_rays.append(
 							(points.copy(), "wall")
 						)
 
@@ -327,8 +337,8 @@ class jumpKingTreeSearchAgent:
 
 		if os.environ.get("render", "0") == "1":
 
-			self.game.debug_rays.append(
-				(points, "none")
+			self.tree_debug_rays.append(
+				(points.copy(), "none")
 			)
 
 		return result
@@ -419,11 +429,13 @@ class jumpKingTreeSearchAgent:
 
 	def expand_node(self, node):
 
-		
-
 		children = []
 
 		for action, (jump_count, direction) in enumerate(self.actions):
+
+			# ==========================================
+			# PREDICCIÓN DEL RAYO
+			# ==========================================
 
 			vx, vy = self.get_ray_jump_vector(
 				jump_count,
@@ -443,13 +455,30 @@ class jumpKingTreeSearchAgent:
 			if not result.valid_floor:
 				continue
 
+			# La potencia REAL que se ejecutará.
+			jump_power = jump_count
+
+			# ==========================================
+			# J30 -> EJECUTAR CON 31
+			#
+			# El rayo sigue siendo J30.
+			# ==========================================
+
+			if (
+				jump_count == 30
+				and node.level > 1
+				and result.landing_level > node.level
+			):
+				print("J30 -> EJECUTAR CON 31")
+				jump_power = 31
+
 			child = SearchNode(
 				x=result.landing_x,
 				y=result.landing_y,
 				level=result.landing_level,
 				global_height=result.global_height,
 				action=action,
-				jump_power=jump_count,
+				jump_power=jump_power,
 				direction=direction,
 				parent=node
 			)
@@ -463,6 +492,8 @@ class jumpKingTreeSearchAgent:
 		return children
 
 	def choose_action(self):
+
+		self.tree_debug_rays.clear()
 
 		x = self.game.king.rect.centerx
 		y = self.game.king.rect.bottom - 10
@@ -590,31 +621,138 @@ class jumpKingTreeSearchAgent:
 		return path	
 
 	def get_action(self):
-		
 
 		if self.current_action is None:
 			self.choose_action()
 
+			# Potencia real que se utilizará para ejecutar
+			self.current_jump_power = None
+
 		if self.current_action is None:
+			self.show_tree = False
 			return None
 
 		jump_count, direction = self.actions[self.current_action]
 
+		# ==========================================
+		# DETERMINAR POTENCIA REAL DEL SALTO
+		# ==========================================
+
+		if self.current_jump_power is None:
+
+			self.current_jump_power = jump_count
+
+			# Solo J30 puede convertirse en J31
+			if jump_count == 30:
+
+				x = self.game.king.rect.centerx
+				y = self.game.king.rect.bottom - 10
+				level = self.game.king.levels.current_level
+
+				# IMPORTANTE:
+				# la predicción sigue siendo J30
+				vx, vy = self.get_ray_jump_vector(
+					30,
+					direction
+				)
+
+				result = self.evaluate_jump(
+					x,
+					y,
+					level,
+					30,
+					direction,
+					vx,
+					vy
+				)
+
+				# Si el J30 predice que llegamos al siguiente nivel,
+				# ejecutamos físicamente el salto con 31.
+				if (
+					result.valid_floor
+					and result.landing_level > level
+					and level > 1
+				):
+					self.current_jump_power = 31
+
+					print(
+						"J30 predice subida de nivel -> "
+						"ejecutando con potencia 31"
+					)
+
+		actual_jump_count = self.current_jump_power
+
 		hold_action = 3 if direction == "left" else 2
 		release_action = 1 if direction == "left" else 0
 
-		if self.action_frame < jump_count:
+		# ==========================================
+		# FASE DE CARGA
+		# ==========================================
+
+		if self.action_frame < actual_jump_count:
+
+			# Mientras se carga el salto,
+			# mostramos el árbol que acaba de calcularse.
+			self.show_tree = True
 
 			self.action_frame += 1
+
 			return hold_action
 
-		elif self.action_frame == jump_count:
+		# ==========================================
+		# LIBERACIÓN DEL SALTO
+		# ==========================================
+
+		elif self.action_frame == actual_jump_count:
+
+			# El salto comienza.
+			# Dejamos de mostrar el árbol.
+			self.show_tree = False
 
 			self.action_frame += 1
+
 			return release_action
+
+		# ==========================================
+		# FIN DE LA ACCIÓN
+		# ==========================================
 
 		else:
 
 			self.current_action = None
+			self.current_jump_power = None
 			self.action_frame = 0
+
 			return None
+
+
+
+	def is_transition_false_floor(
+		self,
+		collision,
+		current_level,
+		tolerance=10
+	):
+		if collision is None:
+			return False
+
+		# Solo nos interesa una colisión clasificada como suelo
+		if collision["collision_kind"] != "floor":
+			return False
+
+		# Solo el suelo perteneciente al nivel actual.
+		# Si pertenece al siguiente nivel, NO lo descartamos.
+		if collision["level"] != current_level:
+			return False
+
+		surface_y = collision["surface_y"]
+
+		if surface_y is None:
+			return False
+
+		# La parte superior del nivel actual es y = 0.
+		# Usamos un pequeño margen para evitar problemas de precisión.
+		if abs(surface_y) <= tolerance:
+			return True
+
+		return False
