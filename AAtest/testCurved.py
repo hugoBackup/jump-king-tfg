@@ -10,27 +10,27 @@ from envs.JumpkingcurvedRayEnv import JumpKingCurvedRayEnv
 
 os.environ["render"] = "1"
 
-
+#Script de evaluacion de los modelos CurvedPPO
 # ============================================================
 # CONFIGURACIÓN DEL AGENTE
 # ============================================================
 
-NUM_EPISODES = 5
+NUM_EPISODES = 100
 
-MODEL_PATH = "resultadosFinales/jumpKingCurvedRaypunish_4days"
+MODEL_PATH = "resultadosFinales/jumpKingCurvedRayKiss_4days"
 
-AGENT_NAME = "PPO_curved_Punish"
+AGENT_NAME = "PPO_curved_Kiss"
 ALGORITHM = "PPO"
 OBSERVATION = "CurvedRays"
-REWARD_FUNCTION = "Punish"
+REWARD_FUNCTION = "Kiss"
 
 
 # ============================================================
 # ARCHIVOS CSV
 # ============================================================
 
-RESULTS_CSV = "AAcsvResults/evaluation_resultsCurvedPunishPPO.csv"
-TRAJECTORIES_CSV = "AAcsvResults/evaluation_trajectoriesCurvedPunishPPO.csv"
+RESULTS_CSV = "ZZZ/evaluation_resultsCurvedPPOKiss.csv"
+TRAJECTORIES_CSV = "ZZZ/evaluation_trajectoriesCurvedPPOKiss.csv"
 
 
 # ============================================================

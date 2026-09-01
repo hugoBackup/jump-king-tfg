@@ -10,28 +10,28 @@ from envs.jumpKingStraightRayEnv import JumpKingStraightRayEnv
 
 os.environ["render"] = "1"
 
-
+#Script de evaluacion de los modelos StraightDQN
 # ============================================================
 # CONFIGURACIÓN DEL AGENTE
 # ============================================================
 
-NUM_EPISODES = 5
+NUM_EPISODES = 100
 
-MODEL_PATH = "resultadosFinales/jumpKingStraightRaypunishDQN_4days"
+MODEL_PATH = "resultadosFinales/jumpKingStraightRayPunishDQN_4days"
 
-AGENT_NAME = "DQN_straight_punish"
+AGENT_NAME = "DQN_straight_Punish"
 ALGORITHM = "DQN"
 OBSERVATION = "StraightRays"
-REWARD_FUNCTION = "punish"
+REWARD_FUNCTION = "Punish"
 
 
 # ============================================================
 # ARCHIVOS CSV
 # ============================================================
 
-RESULTS_CSV = "AAcsvResults/evaluation_resultsStraightPunishDQN.csv"
+RESULTS_CSV = "BBcsvResults/evaluation_resultsStraightPunishDQN.csv"
 
-TRAJECTORIES_CSV = "AAcsvResults/evaluation_trajectoriesStraightPunishDQN.csv"
+TRAJECTORIES_CSV = "BBcsvResults/evaluation_trajectoriesStraightPunishDQN.csv"
 
 
 # ============================================================

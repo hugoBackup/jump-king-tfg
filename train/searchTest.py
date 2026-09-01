@@ -9,7 +9,7 @@ from agents.jumpKingTreeSearchAgent import jumpKingTreeSearchAgent
 os.environ["render"] = "1"
 
 from JumpKing import JKGame
-
+#ejecucion del algoritmo de treeSearch
 
 
 game = JKGame()
@@ -33,5 +33,6 @@ while True:
             game.king.levels.current_level,
             game.king.y
         )
+        print(height)
         
     game.step(action)

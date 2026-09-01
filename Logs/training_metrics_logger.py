@@ -3,7 +3,7 @@ import os
 import time
 from datetime import datetime
 
-
+#guardado de metricas del entrenamiento tanto de el algoritmo de DQN como PPO
 class TrainingMetricsLogger:
 
     def __init__(self, agent_name, algorithm):

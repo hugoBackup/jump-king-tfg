@@ -5,7 +5,7 @@ import numpy as np
 
 from JumpKing import JumpPredictionResult
 from JumpKing import JKGame
-
+#Esta clase es utilizada por los agentes que utilizan el espacio de observacion basado en rayos curvos
 class jumpKingAgentCurvedRay:
 
 	def __init__(self, game):
@@ -19,7 +19,9 @@ class jumpKingAgentCurvedRay:
 		self.prev_y = None
 		self.cached_jump_state = [-1.0] * 30
 		self.cached_ground_state = [0.0] * 3	
-		
+
+
+	#esta funcion es la encargada de que el agente conozca su situacion en el entorno usando los rayos curvos
 	def get_state(self):
 
 		self.game.debug_ground_rays.clear()
@@ -161,7 +163,8 @@ class jumpKingAgentCurvedRay:
 			state,
 			dtype=np.float32
 		)
-		
+
+	#calculo de las trayectorias de los rayos curvos	
 	def get_ray_jump_vector(self, jump_count, direction):
 
 		speed = (
@@ -183,7 +186,7 @@ class jumpKingAgentCurvedRay:
 
 			speed += 0.9
 
-		# exactamente igual que add_vectors(0,0,...)
+		
 		x = math.sin(angle) * speed
 		y = math.cos(angle) * speed
 
@@ -195,7 +198,8 @@ class jumpKingAgentCurvedRay:
 		vy = -math.cos(angle) * length
 
 		return vx, vy
-	
+
+	#toma los detayes sobre las caracteristicas resultantes de cada rayo. Como el punto de caida , altura , etc.
 	def evaluate_jump(
 		self,
 		x,
@@ -392,7 +396,7 @@ class jumpKingAgentCurvedRay:
 			)
 
 		return result
-	
+	#rayos en direccion al suelo que perciben el terreno
 	def cast_ground_ray(
 		self,
 		x,
@@ -439,7 +443,7 @@ class jumpKingAgentCurvedRay:
 				)
 
 		return 0.0
-	
+	#rayos del suelo, sirven para que en caso de el agente estar al borde de una plataforma que sea consciente
 	def get_ground_sensors(self):
 
 		shoulder_y = (

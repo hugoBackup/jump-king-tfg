@@ -7,7 +7,8 @@ import numpy as np
 from JumpKing import JKGame
 from Logs.training_logger import TrainingLogger
 
-
+#Esta clase es una copia de BASE en la que se elimina la recompensa por 
+#realizar un buen salto que no supere la altura máxima alcanzada.
 class JumpKingPunishEnv(gym.Env):
 
 	def __init__(self, agent_class):

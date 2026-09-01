@@ -5,7 +5,7 @@ import numpy as np
 
 from JumpKing import JKGame
 
-
+#esta clase es utilizada por los agentes que utilizan el entorno de observacion StraightRay
 class JumpKingAgentStraightRay:
 
 	def __init__(self, game):
@@ -39,6 +39,9 @@ class JumpKingAgentStraightRay:
 		self.cached_ray_state = [0.0] * 32
 		self.cached_ground_state = [0.0] * 3
 
+
+	#genera el espacio de observacion del agente utilizando raycasting clasico en las 16 direcciones dadas 
+	# y recogiendo las colisiones y el tipo de colision y datos de la misma.
 	def get_state(self):
 
 		state = []
@@ -79,7 +82,7 @@ class JumpKingAgentStraightRay:
 			state,
 			dtype=np.float32
 		)
-	
+	#genera los rayos utilizados en el espacio de observacion
 	def cast_straight_ray(
 		self,
 		x,
@@ -158,6 +161,8 @@ class JumpKingAgentStraightRay:
 			-1.0,
 			0.0
 		)
+
+	#genera los rayos utilizados para la deteccion del limite de plataformas
 	def get_ground_sensors(self):
 
 		shoulder_y = (
@@ -194,7 +199,7 @@ class JumpKingAgentStraightRay:
 			1.0 if center_ground > 0.5 else 0.0,
 			1.0 if right_ground > 0.5 else 0.0
 		)
-	
+	#genera rayos que detectan la presencia inmediata de suelo o su ausencia
 	def cast_ground_ray(
 		self,
 		x,

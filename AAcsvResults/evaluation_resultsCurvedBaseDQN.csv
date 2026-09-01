@@ -1,6 +1,6 @@
 agent,algorithm,observation,reward_function,episode,total_reward,max_height,max_level,actions_to_max_height
-DQN_curved_Base,DQN,CurvedRays,Base,1,-87.92,290,1,23
-DQN_curved_Base,DQN,CurvedRays,Base,2,-79.33999999999997,313,1,100
-DQN_curved_Base,DQN,CurvedRays,Base,3,-83.60999999999997,290,1,11
-DQN_curved_Base,DQN,CurvedRays,Base,4,-82.73999999999998,290,1,20
-DQN_curved_Base,DQN,CurvedRays,Base,5,-78.42999999999999,313,1,36
+DQN_base_Punish,DQN,CurvedRays,Base,1,-85.52999999999999,290,1,12
+DQN_base_Punish,DQN,CurvedRays,Base,2,-86.03999999999999,290,1,24
+DQN_base_Punish,DQN,CurvedRays,Base,3,-85.99000000000002,290,1,11
+DQN_base_Punish,DQN,CurvedRays,Base,4,-82.26000000000002,290,1,60
+DQN_base_Punish,DQN,CurvedRays,Base,5,-84.22,290,1,11

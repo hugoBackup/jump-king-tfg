@@ -17,7 +17,7 @@ from callbacks.training_metrics_callback import TrainingMetricsCallback
 os.environ["render"] = "0"
 type = "Kiss"
 
-
+#Script de entrenamiento de los modelos CurvedDQN
 # ============================================================
 # ENTORNO
 # ============================================================

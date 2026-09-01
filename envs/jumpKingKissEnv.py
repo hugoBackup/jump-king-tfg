@@ -7,7 +7,10 @@ import numpy as np
 from JumpKing import JKGame
 from Logs.training_logger import TrainingLogger
 
-
+#esta funcion es una copia de BASE para la cual se han hecho modificaciones.
+#ya no se ofrece recompensa por llegar a una altura ya alcanzada previamente
+#ya no existe bonificacion por saltos consecutivos
+#no existe penalizacion por caida
 class JumpKingKissEnv(gym.Env):
 
 	def __init__(self, agent_class):

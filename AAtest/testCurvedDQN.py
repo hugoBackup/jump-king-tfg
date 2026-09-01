@@ -10,14 +10,14 @@ from envs.JumpkingcurvedRayEnv import JumpKingCurvedRayEnv
 
 os.environ["render"] = "1"
 
-
+#Script de evaluacion de los modelos CurvedDQN
 # ============================================================
 # CONFIGURACIÓN DEL AGENTE
 # ============================================================
 
-NUM_EPISODES = 5
+NUM_EPISODES = 100
 
-MODEL_PATH = "resultadosFinales/jumpKingCurvedRaypunish_4days"
+MODEL_PATH = "resultadosFinales/jumpKingCurvedRayPunishDQN_4days"
 
 AGENT_NAME = "DQN_curved_Punish"
 ALGORITHM = "DQN"
@@ -29,8 +29,8 @@ REWARD_FUNCTION = "Punish"
 # ARCHIVOS CSV
 # ============================================================
 
-RESULTS_CSV = "AAcsvResults/evaluation_resultsCurvedPunishDQN.csv"
-TRAJECTORIES_CSV = "AAcsvResults/evaluation_trajectoriesCurvedPunishDQN.csv"
+RESULTS_CSV = "BBcsvResults/evaluation_resultsCurvedPPOPunishDQN.csv"
+TRAJECTORIES_CSV = "BBcsvResults/evaluation_trajectoriesCurvedPPOPunishDQN.csv"
 
 
 # ============================================================
@@ -167,6 +167,14 @@ for episode in range(1, NUM_EPISODES + 1):
         height = env.game.get_global_height(
             level,
             y
+        )
+
+        print(
+            f"LEVEL={level} | "
+            f"king.y={env.game.king.y} | "
+            f"rect.top={env.game.king.rect.top} | "
+            f"rect.bottom={env.game.king.rect.bottom} | "
+            f"GLOBAL_HEIGHT={height}"
         )
 
         # ----------------------------------------------------

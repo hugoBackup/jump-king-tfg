@@ -30,12 +30,13 @@ from Menu import Menus
 from Start import Start
 
 
-
+#esta es la clase  ha sido modificada a partir de la clase original de JumpKing.py para poder implementar el agente y los rayos de suelo y de trayectoria 
+# y permitir que el agente pueda conocer la geometria del siguiente nivel desde el nivel actual ademas de mover el agente.
 class JKGame:
 	""" Overall class to manga game aspects """
 
 	
-
+	#Esta funcion se usa para recojer la altura del agente en el videojuego durante las ejecuciones
 	def get_global_height(self, level, y):
 		return level * 360 - y
 
@@ -147,7 +148,7 @@ class JKGame:
 
 		return state  
 		
-	
+	#esta funcion se usa para comprobar si el agente esta disponible para realizar una accion
 	def move_available(self):
 
 		# no puede actuar en el aire
@@ -163,7 +164,8 @@ class JKGame:
 			return False
 
 		return True
-
+	
+	#esta funcion se usa para comprobar si el agente esta disponible para realizar una accion en treesearch
 	def tree_move_available(self):
 
 		# No puede actuar en el aire
@@ -282,6 +284,10 @@ class JKGame:
 
 			self.start.update()
 
+
+
+	#esta funcion es la encargada de actualizar la informacion en pantalla , a la cual le he añadido la funcion de actualizar los rayos y 
+	#la zona de preview
 	def _update_gamescreen(self):
 
 		pygame.display.set_caption(f"JumpKing Hugo Valls TFG - {self.clock.get_fps():.2f} FPS")
@@ -320,12 +326,16 @@ class JKGame:
 		if hasattr(self, "agent"):
 			self.agent.get_state()
 		self.draw_debug_rays()
+		#self.draw_straight_debug_rays()
 		self.draw_tree_debug_rays()
 		self.menus.blitme()
 
 		# ==========================================
 		# PREVIEW NIVEL SUPERIOR
 		# ==========================================
+
+		#esta parte del codigo se encarga de hacer una preview del siguiente nivel en en nivel actual de forma que los 
+		#agentes puedan conocer la geometria del siguiente nivel desde la parte superior del nivel actual-
 
 		self.screen.fill((0, 0, 0))
 
@@ -497,7 +507,7 @@ class JKGame:
 			20
 		)
 
-	
+	#clasificador de superficies cuando los rayos entran en contacto con ellas (deprecado)
 	def classify_collision(
 			
 		self,
@@ -530,7 +540,7 @@ class JKGame:
 			"kind": "wall",
 			"surface_y": None
 		}
-	
+	#cuando un rayo entra en contacto con una superficie y rebota esta funcion se encarga de recalcular la trayectoria 
 	def handle_wall_bounce(
 		self,
 		x,
@@ -556,7 +566,9 @@ class JKGame:
 			"vx": vx,
 			"vy": vy
 		}
-	
+
+
+	#detecta colisiones y su tipo
 	def find_collision(
 		self,
 		x,
@@ -629,7 +641,7 @@ class JKGame:
 
 
 	
-		
+	#funcion encargada de evaluar la calidad del salto (deprecada)	
 	def evaluate_jump(
 		self,
 		x,
@@ -815,7 +827,7 @@ class JKGame:
 			)
 
 		return result
-
+	#funcion encargada de lanzar los rayos de suelo (deprecada)
 	def cast_ground_ray(
 		self,
 		x,
@@ -863,6 +875,7 @@ class JKGame:
 
 		return 0.0
 	
+	#funcion encargada de generar los 3 rayos de suelo (deprecada)
 	def get_ground_sensors(self):
 
 		shoulder_y = (
@@ -1062,54 +1075,7 @@ class JKGame:
 			state,
 			dtype=np.float32
 		)
-	
-	def draw_input_overlay(self):
-
-		
-
-		font = pygame.font.SysFont(None, 24)
-
-		x = 20
-		y = 20
-
-		action = getattr(self, "last_action", -1)
-
-		left  = action in [0,2,4,6,8]
-		right = action in [1,3,5,7,9]
-		jump  = action in [2,3,4,5,6,7,8,9]
-
-		def draw_key(label, px, py, active):
-
-			color = (
-				(0,255,0)
-				if active
-				else
-				(100,100,100)
-			)
-
-			pygame.draw.rect(
-				self.game_screen,
-				color,
-				(px, py, 40, 40),
-				2
-			)
-
-			text = font.render(
-				label,
-				True,
-				color
-			)
-
-			self.game_screen.blit(
-				text,
-				(px + 12, py + 10)
-			)
-
-		draw_key("↑", x + 50, y, jump)
-		draw_key("←", x, y + 50, left)
-		draw_key("␣", x + 50, y + 50, jump)
-		draw_key("→", x + 100, y + 50, right)
-	
+	#dibuja los rayos en la pantalla en caso de querer tener representacion visual de ellos
 	def draw_debug_rays(self):
 		
 		for points, collision_type in self.debug_rays:
@@ -1202,7 +1168,72 @@ class JKGame:
 		# 	)	
 
 
+	def draw_straight_debug_rays(self):
 
+		for points, collision_type in self.straight_debug_rays:
+
+			if len(points) < 2:
+				continue
+
+			int_points = [
+				(int(px), int(py))
+				for px, py in points
+			]
+
+			# Dibujar trayectoria recta
+			pygame.draw.lines(
+				self.game_screen,
+				(0, 255, 0),
+				False,
+				int_points,
+				2
+			)
+
+			# Punto final
+			end_x, end_y = int_points[-1]
+
+			size = 5
+
+			if collision_type == "wall":
+				color = (0, 100, 255)
+
+			elif collision_type == "ceiling":
+				color = (255, 0, 0)
+
+			elif collision_type == "floor":
+				color = (150, 150, 150)
+
+			else:
+				color = (255, 255, 255)
+
+			# Cruz en el punto de impacto
+			pygame.draw.line(
+				self.game_screen,
+				color,
+				(end_x - size, end_y - size),
+				(end_x + size, end_y + size),
+				2
+			)
+
+			pygame.draw.line(
+				self.game_screen,
+				color,
+				(end_x - size, end_y + size),
+				(end_x + size, end_y - size),
+				2
+			)
+
+			# Punto de origen
+			start_x, start_y = int_points[0]
+
+			pygame.draw.circle(
+				self.game_screen,
+				(0, 150, 255),
+				(start_x, start_y),
+				3
+			)
+
+	#dibuja los rayos en treesearch para tener representacion visual de las trayectorias que crean
 	def draw_tree_debug_rays(self):
 
 		# Este agente no utiliza rayos del árbol
@@ -1265,7 +1296,7 @@ class JKGame:
 				2
 			)
 
-
+	#esta funcion permite dibujar los rayos en la zona de preview ademas de la pantalla del juego
 	def draw_preview_rays(self, rays, scale):
 
 		for points, collision_type in rays:

@@ -10,28 +10,28 @@ from envs.jumpKingStraightRayEnv import JumpKingStraightRayEnv
 
 os.environ["render"] = "1"
 
-
+#Script de evaluacion de los modelos StraightPPO
 # ============================================================
 # CONFIGURACIÓN DEL AGENTE
 # ============================================================
 
-NUM_EPISODES = 5
+NUM_EPISODES = 100
 
-MODEL_PATH = "resultadosFinales/jumpKingStraightRaypunish_4days"
+MODEL_PATH = "resultadosFinales/jumpKingStraightRayKiss_4days"
 
-AGENT_NAME = "PPO_straight_punish"
+AGENT_NAME = "PPO_straight_Kiss"
 ALGORITHM = "PPO"
 OBSERVATION = "StraightRays"
-REWARD_FUNCTION = "punish"
+REWARD_FUNCTION = "Kiss"
 
 
 # ============================================================
 # ARCHIVOS CSV
 # ============================================================
 
-RESULTS_CSV = "AAcsvResults/evaluation_resultsStraightPunishPPO.csv"
+RESULTS_CSV = "ZZZ/evaluation_resultsStraightPPOKiss.csv"
 
-TRAJECTORIES_CSV = "AAcsvResults/evaluation_trajectoriesStraightPunishPPO.csv"
+TRAJECTORIES_CSV = "ZZZ/evaluation_trajectoriesStraightPPOKiss.csv"
 
 
 # ============================================================

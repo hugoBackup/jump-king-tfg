@@ -7,7 +7,7 @@ import numpy as np
 from JumpKing import JKGame
 from Logs.training_logger import TrainingLogger
 
-
+#esta clase define la funcion de recompensa BASE estudiada en este proyecto
 class JumpKingBaseEnv(gym.Env):
 
 	def __init__(self, agent_class):
@@ -104,6 +104,8 @@ class JumpKingBaseEnv(gym.Env):
 
 		return self.get_state(), {}
 
+	
+	#step y calculo de la recompensa 
 	def step(self, action):
 
 		#print("ACTION RECIBIDA:", action)
@@ -143,6 +145,7 @@ class JumpKingBaseEnv(gym.Env):
 			new_level,
 			new_y
 		)
+
 
 		# ==================================
 		# RECOMPENSA BASE
@@ -215,14 +218,14 @@ class JumpKingBaseEnv(gym.Env):
 		):
 
 			self.consecutive_good_jumps += 1
-
+			#caracteristica de BASE , el uso de fibonacci para fomentar los saltos consecutivos
 			base_reward = (
 				2.0 *
 				self.fibonacci(
 					self.consecutive_good_jumps
 				)
 			)
-
+			#el mejor caso de recompensa , se ha batido un record
 			if new_height > self.best_height:
 
 				self.best_height = new_height
@@ -286,7 +289,7 @@ class JumpKingBaseEnv(gym.Env):
 			{}
 		)
 
-
+	#calculo de la sucesion de fibonacci para los saltos consecutivos
 	def fibonacci(self, n):
 
 		if n <= 2:
@@ -305,7 +308,7 @@ class JumpKingBaseEnv(gym.Env):
 	def get_state(self):
 
 		return self.agent.get_state()
-
+	#ejecucion de la accion 
 	def execute_action(self, action):
 
 		if action == 0:  # J5L

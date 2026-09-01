@@ -3,7 +3,7 @@ import os
 import time
 from datetime import datetime
 
-
+#guardado de metricas durante el entrenamiento
 class TrainingLogger:
 
     def __init__(self, agent_name):

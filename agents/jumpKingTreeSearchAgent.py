@@ -8,7 +8,7 @@ import numpy as np
 from SearchNode import SearchNode
 from JumpKing import JumpPredictionResult
 from JumpKing import JKGame
-
+#esta clase es utilizada por el modelo basado en reglas que se utilia para comparar resultados con los modelos de RL
 class jumpKingTreeSearchAgent:
 
 	def __init__(self, game):
@@ -25,25 +25,16 @@ class jumpKingTreeSearchAgent:
 			(30, "left"),
 			(30, "right")
 		]
-		#0 -> 5L
-		#1 -> 5R
-		#2 -> 10L
-		#3 -> 10R
-		#4 -> 20L
-		#5 -> 20R
-		#6 -> 25L
-		#7 -> 25R
-		#8 -> 30L
-		#9 -> 30R
 
 		self.game = game
+		
 
 		self.current_action = None
 		self.current_jump_power = None
 		self.action_frame = 0
 
 		self.search_depth = 3
-		self.max_branches = 6
+		self.max_branches = 10
 
 		self.tree_debug_rays = []
 		self.show_tree = False
@@ -62,6 +53,30 @@ class jumpKingTreeSearchAgent:
 		]
 
 		self.jump_counter = 0
+		self.execution_action_counter = 0
+
+		self.execution_max_height = float("-inf")
+		self.execution_max_height_actions = 0
+
+
+		self.results_file = open(
+			"ZZZZresultsTreeSearch.csv",
+			mode="w",
+			newline="",
+			encoding="utf-8"
+		)
+
+		self.results_writer = csv.writer(self.results_file)
+
+		self.results_writer.writerow([
+			"action",
+			"level",
+			"height",
+			"max_height",
+			"actions_to_max_height"
+		])
+
+		self.results_file.flush()
 
 		self.log_file = open(
 			"treeSearchLog.csv",
@@ -86,7 +101,7 @@ class jumpKingTreeSearchAgent:
 		return np.zeros(1, dtype=np.float32)
 
 	
-		
+	#Genera la trayectoria de lso rayos curvos	
 	def get_ray_jump_vector(self, jump_count, direction):
 
 		speed = (
@@ -108,7 +123,6 @@ class jumpKingTreeSearchAgent:
 
 			speed += 0.9
 
-		# exactamente igual que add_vectors(0,0,...)
 		x = math.sin(angle) * speed
 		y = math.cos(angle) * speed
 
@@ -120,7 +134,9 @@ class jumpKingTreeSearchAgent:
 		vy = -math.cos(angle) * length
 
 		return vx, vy
+
 	
+	#toma los detayes sobre las caracteristicas resultantes de cada rayo. Como el punto de caida , altura , etc.
 	def evaluate_jump(
 			self,
 			x,
@@ -342,91 +358,8 @@ class jumpKingTreeSearchAgent:
 			)
 
 		return result
-	
-	def cast_ground_ray(
-		self,
-		x,
-		y,
-		sensor_name,
-		max_distance=150
-	):
 
-		current_level = self.game.king.levels.current_level
-
-		points = []
-
-		for d in range(max_distance):
-
-			test_y = y + d
-
-			points.append((x, test_y))
-
-			collision = self.game.find_collision(
-				x,
-				test_y,
-				test_y - 1,
-				current_level,
-				360
-			)
-
-			if collision is None:
-				continue
-
-			if collision["collision_kind"] == "floor":
-
-				if os.environ.get("render", "0") == "1":
-
-					self.game.debug_ground_rays.append(
-						(points.copy(), "floor")
-					)
-
-				return 1.0 - (d / max_distance)
-
-			if os.environ.get("render", "0") == "1":
-
-				self.game.debug_ground_rays.append(
-					(points.copy(), sensor_name)
-				)
-
-		return 0.0
-	
-	def get_ground_sensors(self):
-
-		shoulder_y = (
-			self.game.king.rect.top
-			+ self.game.king.rect.height * 0.3
-		)
-
-		left_x = self.game.king.rect.left
-		center_x = self.game.king.rect.centerx
-		right_x = self.game.king.rect.right
-
-		left_ground = self.cast_ground_ray(
-			left_x,
-			shoulder_y,
-			"left"
-		)
-
-		center_ground = self.cast_ground_ray(
-			center_x,
-			shoulder_y,
-			"center"
-		)
-
-		right_ground = self.cast_ground_ray(
-			right_x,
-			shoulder_y,
-			"right"
-		)
-
-		
-
-		return (
-			1.0 if left_ground > 0.5 else 0.0,
-			1.0 if center_ground > 0.5 else 0.0,
-			1.0 if right_ground > 0.5 else 0.0
-		)
-
+	# Genera los nodos hijos probando todas las acciones de salto posibles
 	def expand_node(self, node):
 
 		children = []
@@ -469,7 +402,7 @@ class jumpKingTreeSearchAgent:
 				and node.level > 1
 				and result.landing_level > node.level
 			):
-				print("J30 -> EJECUTAR CON 31")
+				
 				jump_power = 31
 
 			child = SearchNode(
@@ -490,7 +423,7 @@ class jumpKingTreeSearchAgent:
 			children.append(child)
 
 		return children
-
+	# Construye el árbol de búsqueda y selecciona la accion que lleva al mejor resultado del arbol
 	def choose_action(self):
 
 		self.tree_debug_rays.clear()
@@ -542,7 +475,7 @@ class jumpKingTreeSearchAgent:
 		self.log_file.flush()
 
 	
-
+	#Explora recursivamente el arbol entero.
 	def search(
 		self,
 		node,
@@ -580,7 +513,7 @@ class jumpKingTreeSearchAgent:
 				depth - 1,
 				debug=False
 			)
-
+	#busca la hoja del arbol que presenta mas altura global
 	def get_best_leaf(self, node):
 
 		if len(node.children) == 0:
@@ -603,7 +536,8 @@ class jumpKingTreeSearchAgent:
 				best_leaf = leaf
 
 		return best_leaf	
-
+	
+	#reconstruye ña seciemcoa de accopmes desde ña raoz jasta ima hoja
 	def get_path(self, leaf):
 
 		path = []
@@ -620,6 +554,7 @@ class jumpKingTreeSearchAgent:
 
 		return path	
 
+	#controla la ejecucion del salto elegido
 	def get_action(self):
 
 		if self.current_action is None:
@@ -675,12 +610,15 @@ class jumpKingTreeSearchAgent:
 				):
 					self.current_jump_power = 31
 
-					print(
-						"J30 predice subida de nivel -> "
-						"ejecutando con potencia 31"
-					)
+					
 
-		actual_jump_count = self.current_jump_power
+		level = self.game.king.levels.current_level
+
+		if level > 0:
+			actual_jump_count = self.current_jump_power + 1
+		else:
+			actual_jump_count = self.current_jump_power
+
 
 		hold_action = 3 if direction == "left" else 2
 		release_action = 1 if direction == "left" else 0
@@ -711,6 +649,38 @@ class jumpKingTreeSearchAgent:
 
 			self.action_frame += 1
 
+			# ==========================================
+			# INFORMACIÓN DE EJECUCIÓN
+			# ==========================================
+
+			self.execution_action_counter += 1
+
+			level = self.game.king.levels.current_level
+			y = self.game.king.y
+
+			height = self.game.get_global_height(
+				level,
+				y
+			)
+
+			if height > self.execution_max_height:
+
+				self.execution_max_height = height
+
+				self.execution_max_height_actions = (
+					self.execution_action_counter
+				)
+
+			self.results_writer.writerow([
+				self.execution_action_counter,
+				level,
+				height,
+				self.execution_max_height,
+				self.execution_max_height_actions
+			])
+
+			self.results_file.flush()
+
 			return release_action
 
 		# ==========================================
@@ -726,7 +696,7 @@ class jumpKingTreeSearchAgent:
 			return None
 
 
-
+	# Comprueba si una colisión con el suelo pertenece realmente a una plataforma de transición
 	def is_transition_false_floor(
 		self,
 		collision,

@@ -1,0 +1,5 @@
+episode,reward,max_height,max_level,actions,actions_to_max_height,unique_positions,best_height_ever,time_seconds
+1,-69.72,448,2,100,10,14,448,66.08321619033813
+2,-69.72,448,2,100,10,14,448,134.7722201347351
+3,-69.72,448,2,100,10,14,448,203.57958507537842
+4,-69.72,448,2,100,10,14,448,266.5410575866699

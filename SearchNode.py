@@ -1,3 +1,5 @@
+
+#funcion representacion de nodo para treesearch
 class SearchNode:
 
     def __init__(
